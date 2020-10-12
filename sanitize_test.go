@@ -7,7 +7,7 @@ import (
 )
 
 const TEST_TEXT1 = "Hello my name is John, my email address is john@test.com and my birthday is January 1, 2000."
-const TEST_TEXT2 = "Hello my name is John, my email address is john@test.com. My birthday is January 1, 2000. My "
+
 func TestSanitizeFixture(t *testing.T) {
     gunit.Run(new(SanitizeFixture), t)
 }
@@ -18,18 +18,22 @@ type SanitizeFixture struct {
 func (this *SanitizeFixture) Setup() {
 }
 
-func (this *SanitizeFixture) TestSanitizeDOB() {
-    sanitized := RedactDateOfBirth("November 1, 2000")
-    this.So(sanitized, should.Equal, "[DOB REDACTED]")
+func (this *SanitizeFixture) TestRedactDOB() {
+    input := "Hello my name is John, my date of birth is 11/1/2000 and my employee's date of birth is 01-01-2001, oh also November 1, 2000."
+    expectedOutput := "Hello my name is John, my date of birth is [DOB REDACTED] and my employee's date of birth is [DOB REDACTED], oh also [DOB REDACTED]."
+
+    output := RedactDateOfBirth(input)
+
+    this.So(output, should.Resemble, expectedOutput)
 }
 
-func (this *SanitizeFixture) TestSanitizeEmail() {
-    sanitized := RedactEmail("user@test.com")
-    this.So(sanitized, should.Equal, "[EMAIL REDACTED]")
-}
-func (this *SanitizeFixture)TestFindEmail() {
-    emails := FindEmails(TEST_TEXT2)
-    this.So(emails[0], should.Equal, "john@test.com")
+func (this *SanitizeFixture) TestRedactEmail() {
+    input := "Hello my name is John, my email address is john@test.com and my employee's email is jake@test.com."
+    expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED] and my employee's email is [EMAIL REDACTED]."
+
+    output := RedactEmail(input)
+
+    this.So(output, should.Resemble, expectedOutput)
 }
 
 func (this *SanitizeFixture) TestSanitizePhone() {

@@ -3,10 +3,9 @@ package sanitize
 import (
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 )
-
-var months = []string{"january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december"}
 
 func FindDOB(input string) (dates []string){
 	dash := regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
@@ -16,17 +15,11 @@ func FindDOB(input string) (dates []string){
 
 	dates = append(dates, dash.FindAllString(input, 1000000)...)
 	dates = append(dates, slash.FindAllString(input, 1000000)...)
-	dates = append(dates, standardUS.FindAllString(input, 10000)...)
-	dates = append(dates, standardEU.FindAllString(input, 10000)...)
+	dates = append(dates, standardUS.FindAllString(input, 1000000)...)
+	dates = append(dates, standardEU.FindAllString(input, 1000000)...)
 
 	return dates
 }
-//s{3,9} \d{1,2},\d{4}
-func standardDOB(input string) (dates []string){
-
-	return dates
-}
-
 
 func FindEmails(input string)  (emails []string){
 	var temp string
@@ -47,8 +40,6 @@ func FindEmails(input string)  (emails []string){
 	}
 	return emails
 }
-
-
 
 func RedactDateOfBirth(input string) string {
 	foundDOB := FindDOB(input)
@@ -74,13 +65,40 @@ func RedactSSN(SSN string) string {
 	return  redact("SSN")
 }
 
-func RedactCreditCard(card string) string {
-	card = strings.ReplaceAll(card, "-", "")
-	card = strings.ReplaceAll(card, " ", "")
-	return fmt.Sprintf("[MASKED %s****%s]" , card[:4], card[12:])
+func RedactCreditCard(input string) string {
+	//Find CC and then sanitize
+	cards := FindCreditCards(input)
+	return SanitizeCreditCard(cards, input)
+}
+
+func FindCreditCards(input string) (cards []string){
+	var temp string
+	for _, character := range input {
+		if character == ' ' || character == '.' {
+			lengthTemp := len(temp)
+			if lengthTemp >= 13 && lengthTemp <= 19 {
+				new := strings.ReplaceAll(temp, "-", "")
+				if _, err := strconv.Atoi(new) ; err == nil {
+				cards = append(cards, temp)
+				}
+			}
+			temp = ""
+			continue
+		}
+		temp = fmt.Sprintf("%s%c", temp, character)
+	}
+	return cards
+}
+
+func SanitizeCreditCard(cards []string, input string) string {
+	for _, card := range cards{
+		new := strings.ReplaceAll(card, "-", "")
+		new = fmt.Sprintf("[MASKED %s****%s]", new[:4], new[12:])
+		input = strings.ReplaceAll(input, card, new)
+	}
+	return input
 }
 
 func redact(statement string) string {
 	return fmt.Sprintf("[%s REDACTED]", statement)
 }
-

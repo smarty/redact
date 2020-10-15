@@ -8,6 +8,7 @@ import (
 )
 
 func FindDOB(input string) (dates []string){
+	// TODO: define regular expressions as package-level variables (compilation only needs to happen once instead of every time FindDOB is called)
 	dash := regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
 	slash := regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
 	standardUS := regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)

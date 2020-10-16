@@ -7,6 +7,7 @@ import (
 	"strings"
 )
 
+
 func RedactDateOfBirth(input string) string {
 	foundDOB := FindDOB(input)
 	for _, DOB := range foundDOB {
@@ -15,12 +16,9 @@ func RedactDateOfBirth(input string) string {
 	return input
 }
 
-func FindDOB(input string) (dates []string) {
-	dash := regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
-	slash := regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
-	standardUS := regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
-	standardEU := regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
+/*TODO: define regular expressions as package-level variables (compilation only needs to happen once instead of every time FindDOB is called)*/
 
+func FindDOB(input string) (dates []string){
 	dates = append(dates, dash.FindAllString(input, 1000000)...)
 	dates = append(dates, slash.FindAllString(input, 1000000)...)
 	dates = append(dates, standardUS.FindAllString(input, 1000000)...)
@@ -28,6 +26,12 @@ func FindDOB(input string) (dates []string) {
 
 	return dates
 }
+var (
+	dash = regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
+	slash = regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
+	standardUS = regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
+	standardEU = regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
+)
 
 //////////////////////////////////////////////////////////////////
 
@@ -144,7 +148,7 @@ func FindTel(input string) (telNums []string) {
 			if spaceDelimitedCandidate(input, i) {
 				temp += " "
 			} else {
-				appendCandidate(temp, &telNums, 10, 16)
+				appendTelCandidate(temp, &telNums, 10, 16)
 				temp = ""
 			}
 		}
@@ -176,13 +180,7 @@ func breakNotFound(character int32) bool {
 
 func appendCandidate(temp string, items *[]string, min, max int) {
 	lengthTemp := len(temp)
-	if lengthTemp == 11 && strings.Contains(temp, "-"){
-		return
-	}
-	if lengthTemp > 12 && (strings.Contains(temp, "(") || strings.Contains(temp, ")")){
-		return
-	}
-	if lengthTemp >= min && lengthTemp <= max { // SSN 9-11 //NUM 10-16 //CC 13-19
+	if lengthTemp >= min && lengthTemp <= max {
 		new := strings.ReplaceAll(temp, "-", "")
 		new = strings.ReplaceAll(new, " ", "")
 		new = strings.ReplaceAll(new, "(", "")
@@ -191,6 +189,21 @@ func appendCandidate(temp string, items *[]string, min, max int) {
 			*items = append(*items, temp)
 		}
 	}
+}
+
+func appendTelCandidate(temp string, items *[]string, min, max int){
+	lengthTemp := len(temp)
+	if lengthTemp == 11 && strings.Contains(temp, "-"){
+		return
+	}
+	if resemblesCC(temp, lengthTemp) {
+		return
+	}
+	appendCandidate(temp, items, min, max)
+}
+
+func resemblesCC(temp string, lengthTemp int) bool {
+	return lengthTemp > 12 && !((strings.Contains(temp, "(") || strings.Contains(temp, ")")) || strings.Contains(temp, " ") || strings.Contains(temp, "-"))
 }
 
 func spaceDelimitedCandidate(input string, i int) bool {

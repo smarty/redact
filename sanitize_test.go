@@ -24,9 +24,9 @@ func (this *SanitizeFixture) TestRedactDOB() {
 	this.So(output, should.Resemble, expectedOutput)
 }
 
-func (this *SanitizeFixture) SkipTestRedactEmail() {
+func (this *SanitizeFixture) TestRedactEmail() {
 	input := "Hello my name is John, my email address is john@test.com and my employee's email is jake@test.com and Jake Smith <jake@smith.com>."
-	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED] and my employee's email is [EMAIL REDACTED] and Jake Smith <[EMAIL REDACTED]>." // TODO
+	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED] and my employee's email is [EMAIL REDACTED] and Jake Smith <[EMAIL REDACTED]>." // TODO: Add prefix carrot
 
 	output := RedactEmail(input)
 

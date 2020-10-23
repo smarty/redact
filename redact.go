@@ -1,4 +1,4 @@
-package sanitize
+package redact
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func RedactDateOfBirth(input string) string {
+func DateOfBirth(input string) string {
 	foundDOB := findDOB(input)
 	for _, DOB := range foundDOB {
 		input = strings.ReplaceAll(input, DOB, "[DOB REDACTED]")
@@ -23,7 +23,7 @@ func findDOB(input string) (dates []string) {
 	return dates
 }
 
-func RedactEmail(input string) string {
+func Email(input string) string {
 	foundEmails := findEmails(input)
 	for _, email := range foundEmails {
 		input = strings.ReplaceAll(input, email, "[EMAIL REDACTED]")
@@ -54,7 +54,7 @@ func buildEmail(input, temp string, i int) string {
 	return fmt.Sprintf("%s%c%c%c%c", temp, input[i], input[i+1], input[i+2], input[i+3])
 }
 
-func RedactCreditCard(input string) string {
+func CreditCard(input string) string {
 	cards := findCreditCards(input)
 	return sanitizeCreditCard(cards, input)
 }
@@ -84,7 +84,7 @@ func sanitizeCreditCard(cards []string, input string) string {
 	return input
 }
 
-func RedactSSN(input string) string {
+func SSN(input string) string {
 	cards := findSSN(input)
 	return sanitizeSSN(cards, input)
 }
@@ -111,7 +111,7 @@ func sanitizeSSN(SSNs []string, input string) string {
 	return input
 }
 
-func RedactPhone(input string) string {
+func Phone(input string) string {
 	telNums := findPhone(input)
 	return sanitizePhone(telNums, input)
 }
@@ -138,14 +138,15 @@ func sanitizePhone(telNums []string, input string) string {
 	return input
 }
 
-func RedactAll(input string) string {
-	input = RedactEmail(input)
-	input = RedactDateOfBirth(input)
-	input = RedactPhone(input)
-	input = RedactSSN(input)
-	input = RedactCreditCard(input)
+func All(input string) string {
+	input = Email(input)
+	input = DateOfBirth(input)
+	input = Phone(input)
+	input = SSN(input)
+	input = CreditCard(input)
 	return input
 }
+
 func breakNotFound(character int32) bool {
 	return character != ' ' && character != '.' && character != ','
 }

@@ -148,7 +148,7 @@ func All(input string) string {
 }
 
 func breakNotFound(character int32) bool {
-	return character != ' ' && character != '.' && character != ','
+	return character != ' ' && character != '.' && character != ',' && character != '<'
 }
 func appendCandidate(temp string, items *[]string, min, max int) {
 	lengthTemp := len(temp)

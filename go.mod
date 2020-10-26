@@ -1,4 +1,4 @@
-module github.com/smartystreets/gcs
+module github.com/smartystreets/redact
 
 go 1.13
 

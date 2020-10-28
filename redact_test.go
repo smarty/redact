@@ -61,7 +61,7 @@ func (this *SanitizeFixture) TestRedactTelephone() {
 }
 
 func (this *SanitizeFixture) TestRedactAll() {
-	input := "Hello my name is John, my email address is john@test.com. My phone-number is 1-111-111-1111, my birthday is 1/11/1111, and my CC is 1111111111111."
+	input := "c"
 	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED]. My phone-number is [PHONE REDACTED], my birthday is [DOB REDACTED], and my CC is [CARD 1111****1]."
 
 	output := All(input)

@@ -7,26 +7,41 @@ import (
 	"strings"
 )
 
+func All(input string) string {
+	//input = DateOfBirth(input)
+	//input = Email(input)
+	//input = CreditCard(input)
+	//input = SSN(input)
+	//input = Phone(input)
+	input = Email(input)
+	input = DateOfBirth(input)
+	input = Phone(input)
+	input = SSN(input)
+	input = CreditCard(input)
+	return input
+}
+
 func DateOfBirth(input string) string {
-	foundDOB := findDOB(input)
-	for _, DOB := range foundDOB {
-		input = strings.ReplaceAll(input, DOB, "[DOB REDACTED]")
+	found := findDOB(input)
+	for _, item := range found {
+		input = strings.ReplaceAll(input, item, "[DOB REDACTED]")
 	}
 	return input
 }
 func findDOB(input string) (dates []string) {
-	dates = append(dates, dash.FindAllString(input, 1000000)...)
-	dates = append(dates, slash.FindAllString(input, 1000000)...)
-	dates = append(dates, standardUS.FindAllString(input, 1000000)...)
-	dates = append(dates, standardEU.FindAllString(input, 1000000)...)
+	dates = append(dates, datesWithDashes.FindAllString(input, 1000000)...)
+	dates = append(dates, datesWithSlashes.FindAllString(input, 1000000)...)
+	dates = append(dates, datesInUSFormat.FindAllString(input, 1000000)...)
+	dates = append(dates, datesInEUFormat.FindAllString(input, 1000000)...)
 
 	return dates
 }
 
 func Email(input string) string {
-	foundEmails := findEmails(input)
-	for _, email := range foundEmails {
-		input = strings.ReplaceAll(input, email, "[EMAIL REDACTED]")
+	found := findEmails(input)
+	for _, item := range found {
+		// TODO: Display domain name
+		input = strings.ReplaceAll(input, item, "[EMAIL REDACTED]")
 	}
 	return input
 }
@@ -35,6 +50,7 @@ func findEmails(input string) (emails []string) {
 	var email bool
 	for i, character := range input {
 		if breakNotFound(character) {
+			// TODO: Avoid allocations
 			temp = fmt.Sprintf("%s%c", temp, character)
 		} else {
 			if email {
@@ -51,6 +67,7 @@ func findEmails(input string) (emails []string) {
 	return emails
 }
 func buildEmail(input, temp string, i int) string {
+	// TODO: .co.uk (TLDs)
 	return fmt.Sprintf("%s%c%c%c%c", temp, input[i], input[i+1], input[i+2], input[i+3])
 }
 
@@ -58,7 +75,7 @@ func CreditCard(input string) string {
 	cards := findCreditCards(input)
 	return sanitizeCreditCard(cards, input)
 }
-func findCreditCards(input string) (cards []string) {
+func findCreditCards(input string) (cards []string) { // TODO: LUHN check
 	var temp string
 	for i, character := range input {
 		if breakNotFound(character) {
@@ -78,6 +95,8 @@ func sanitizeCreditCard(cards []string, input string) string {
 	for _, card := range cards {
 		new := strings.ReplaceAll(card, "-", "")
 		new = strings.ReplaceAll(new, " ", "")
+		// TODO: add an if statement for length check & change to only output the last 4 not 12-on
+		// TODO: must pass LUHN/MOD10 algorithm
 		new = fmt.Sprintf("[CARD %s****%s]", new[:4], new[12:])
 		input = strings.ReplaceAll(input, card, new)
 	}
@@ -85,8 +104,11 @@ func sanitizeCreditCard(cards []string, input string) string {
 }
 
 func SSN(input string) string {
-	cards := findSSN(input)
-	return sanitizeSSN(cards, input)
+	found := findSSN(input)
+	for _, item := range found {
+		input = strings.ReplaceAll(input, item, "[SSN REDACTED]")
+	}
+	return input
 }
 func findSSN(input string) (SSNs []string) {
 	var temp string
@@ -104,16 +126,13 @@ func findSSN(input string) (SSNs []string) {
 	}
 	return SSNs
 }
-func sanitizeSSN(SSNs []string, input string) string {
-	for _, SSN := range SSNs {
-		input = strings.ReplaceAll(input, SSN, "[SSN REDACTED]")
-	}
-	return input
-}
 
 func Phone(input string) string {
-	telNums := findPhone(input)
-	return sanitizePhone(telNums, input)
+	found := findPhone(input)
+	for _, item := range found {
+		input = strings.ReplaceAll(input, item, "[PHONE REDACTED]")
+	}
+	return input
 }
 func findPhone(input string) (telNums []string) {
 	var temp string
@@ -130,21 +149,6 @@ func findPhone(input string) (telNums []string) {
 		}
 	}
 	return telNums
-}
-func sanitizePhone(telNums []string, input string) string {
-	for _, num := range telNums {
-		input = strings.ReplaceAll(input, num, "[PHONE REDACTED]")
-	}
-	return input
-}
-
-func All(input string) string {
-	input = Email(input)
-	input = DateOfBirth(input)
-	input = Phone(input)
-	input = SSN(input)
-	input = CreditCard(input)
-	return input
 }
 
 func breakNotFound(character int32) bool {
@@ -180,8 +184,8 @@ func spaceDelimitedCandidate(input string, i int) bool {
 }
 
 var (
-	dash       = regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
-	slash      = regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
-	standardUS = regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
-	standardEU = regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
+	datesWithDashes  = regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
+	datesWithSlashes = regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
+	datesInUSFormat  = regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
+	datesInEUFormat  = regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
 )

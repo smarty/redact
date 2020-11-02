@@ -35,7 +35,7 @@ func (this *SanitizeFixture) TestRedactEmail() {
 
 func (this *SanitizeFixture) TestRedactCreditCard() {
 	input := "Hello my name is John, my Credit card number is: 1111-1111-1111-1111. My employees CC number is 1111111111111111 and 1111 1111 1111 1111 plus 1111111111111."
-	expectedOutput := "Hello my name is John, my Credit card number is: [CARD 1111****1111]. My employees CC number is [CARD 1111****1111] and [CARD 1111****1111] plus [CARD 1111****1]."
+	expectedOutput := "Hello my name is John, my Credit card number is: [CARD 1111****1111]. My employees CC number is [CARD 1111****1111] and [CARD 1111****1111] plus [CARD 1111****1111]."
 
 	output := CreditCard(input)
 
@@ -62,7 +62,7 @@ func (this *SanitizeFixture) TestRedactTelephone() {
 
 func (this *SanitizeFixture) TestRedactAll() {
 	input := "Hello my name is John, my email address is john@test.com. My phone-number is 1-111-111-1111, my birthday is 1/11/1111, and my CC is 1111111111111."
-	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED]. My phone-number is [PHONE REDACTED], my birthday is [DOB REDACTED], and my CC is [CARD 1111****1]."
+	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED]. My phone-number is [PHONE REDACTED], my birthday is [DOB REDACTED], and my CC is [CARD 1111****1111]."
 
 	output := All(input)
 

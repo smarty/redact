@@ -7,11 +7,16 @@ import (
 )
 
 func All(input string) string {
-	//input = Email(input)
-	//input = DateOfBirth(input)
-	//input = Phone(input)
-	//input = SSN(input)
-	input = CreditCard(input)
+	var matches []match
+	matches = append(matches, matchCreditCard(input)...)
+	matches = append(matches, matchEmail(input)...)
+	return RedactMatches(input, matches)
+}
+
+func RedactMatches(input string, matches []match) string {
+	for _, match := range matches {
+		input = strings.ReplaceAll(input, input[match.InputIndex:match.InputIndex+match.Length], strings.Repeat("*", match.Length))
+	}
 	return input
 }
 
@@ -32,84 +37,87 @@ func All(input string) string {
 //	return dates
 //}
 //
-//func Email(input string) string {
-//	found := findEmails(input)
-//	for _, item := range found {
-//		// TODO: Display domain name
-//		input = strings.ReplaceAll(input, item, "[EMAIL REDACTED]")
-//	}
-//	return input
-//}
-//func findEmails(input string) (emails []string) {
-//	var temp string
-//	var email bool
-//	for i, character := range input {
-//		if breakNotFound(character) {
-//			// TODO: Avoid allocations
-//			temp = fmt.Sprintf("%s%c", temp, character)
-//		} else {
-//			if email {
-//				emails = append(emails, buildEmail(input, temp, i))
-//				email = false
-//			}
-//			temp = ""
-//			continue
-//		}
-//		if character == '@' {
-//			email = true
-//		}
-//	}
-//	return emails
-//}
-//func buildEmail(input, temp string, i int) string {
-//	// TODO: .co.uk (TLDs)
-//	return fmt.Sprintf("%s%c%c%c%c", temp, input[i], input[i+1], input[i+2], input[i+3])
-//}
 
-func CreditCard(input string) string {
-	//cards := findCreditCards(input)
-	matches := matchCreditCard(input)
-	return sanitizeCreditCard(matches, input)
-}
-
-//func findCreditCards(input string) (cards []string) { // TODO: LUHN check
-//	var temp string
-//	for i, character := range input {
-//		if breakNotFound(character) {
-//			temp = fmt.Sprintf("%s%c", temp, character)
-//		} else {
-//			if spaceDelimitedCandidate(input, i) {
-//				temp += " "
-//			} else {
-//				appendCandidate(temp, &cards, 13, 19)
-//				temp = ""
-//			}
-//		}
-//	}
-//	return cards
-//}
-func sanitizeCreditCard(cards []match, input string) string {
-	//for _, card := range cards {
-	//	new := strings.ReplaceAll(card, "-", "")
-	//	new = strings.ReplaceAll(new, " ", "")
-	//	// TODO: add an if statement for length check & change to only output the last 4 not 12-on
-	//	// TODO: must pass LUHN/MOD10 algorithm
-	//	new = fmt.Sprintf("[CARD %s****%s]", new[:4], new[len(new)-4:])
-	//	input = strings.ReplaceAll(input, card, new)
-	//}
-	return input
+func matchEmail(input string) (matches []match) {
+	var start int
+	var length int
+	var isCandidate bool // @
+	for i := range input {
+		character := input[i]
+		if !breakNotFound(character) {
+			if isCandidate {
+				matches = append(matches, match{InputIndex: start, Length: length})
+			}
+			start = i + 1
+			length = 0
+			isCandidate = false
+			continue
+		} else {
+			length++
+			if character == '@' {
+				isCandidate = true
+			}
+		}
+	}
+	return matches
 }
 
 func matchCreditCard(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
-	//var total int
-	for i, _ := range input { //traditional for loop
+	var total int
+	for i := 0; i < len(input); i++ {
 		character := input[i]
 		if !isNumeric(character) {
-			if isCreditCard(length) {
-				//length++
+			if isCreditCard(length, total) {
+				matches = append(matches, match{InputIndex: start, Length: length})
+				length = 0
+				start = i + 1
+				total = 0
+				continue
+			}
+			if breakNotFound(character) {
+				start = i + 1
+				length = 0
+				isCandidate = false
+				continue
+			}
+			length++
+		} else {
+			number := int(character - '0')
+			if isCandidate {
+				length++
+				total += number
+			} else {
+				isCandidate = true
+				start = i
+				total = number
+			}
+		}
+	}
+
+	if isCreditCard(length, total) {
+		matches = append(matches, match{InputIndex: start, Length: length})
+	}
+
+	return matches
+}
+func isCreditCard(length, total int) bool {
+	return length >= 13 && length <= 24 && total%10 == 0
+}
+func breakNotFound(character byte) bool {
+	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')'
+}
+
+func matchPhoneNum(input string) (matches []match) {
+	var start int
+	var length int
+	var isCandidate bool
+	for i := 0; i < len(input); i++ {
+		character := input[i]
+		if !isNumeric(character) {
+			if isPhoneNumber(length) {
 				matches = append(matches, match{InputIndex: start, Length: length})
 				length = 0
 				start = i + 1
@@ -118,7 +126,6 @@ func matchCreditCard(input string) (matches []match) {
 			if breakNotFound(character) {
 				start = i + 1
 				length = 0
-				//total = 0
 				isCandidate = false
 				continue
 			}
@@ -130,19 +137,10 @@ func matchCreditCard(input string) (matches []match) {
 			start = i + 1
 		}
 	}
-
-	if isCreditCard(length) {
-		matches = append(matches, match{InputIndex: start, Length: length})
-	}
-
 	return matches
 }
-
-func isCreditCard(length int) bool {
-	return length >= 16 && length <= 19 //TODO: CHECK FOR 12
-}
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
+func isPhoneNumber(length int) bool {
+	return length >= 10 && length <= 14
 }
 
 //func SSN(input string) string {
@@ -194,10 +192,6 @@ func isNumeric(value byte) bool {
 //	return telNums
 //}
 
-func breakNotFound(character byte) bool {
-	return character != '-' && character != ' '
-	//character != ' ' && character != '.' &&  &&
-}
 func appendCandidate(temp string, items *[]string, min, max int) {
 	lengthTemp := len(temp)
 	if lengthTemp >= min && lengthTemp <= max {
@@ -225,6 +219,9 @@ func resemblesCC(temp string, lengthTemp int) bool {
 }
 func spaceDelimitedCandidate(input string, i int) bool {
 	return i+1 < len(input) && ('0' <= input[i+1] && input[i+1] <= '9') && ('0' <= input[i-1] && input[i-1] <= '9' || input[i-1] == ')')
+}
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
 }
 
 type match struct {

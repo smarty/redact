@@ -43,47 +43,61 @@ type SanitizeFixture struct {
 //}
 
 func (this *SanitizeFixture) TestMatchCreditCard() {
-	input := "Blah 1111-1111-1111-1111. CC number is 1111111111111111 and 1111 1111 1111 1111 2222-2222-2222-2222"
-	//My employees CC number is 1111111111111111 and 1111 1111 1111 1111 plus 1111111111111."
+	input := "Blah 1234-5678-9012-3450. CC number is 1111111111118 and 1234 5678 9012 3450 1234-5678-9012-3455-230"
 	this.So(matchCreditCard(input),should.Resemble, []match{{
 		InputIndex: 5,
 		Length:     19,
 	}, {
 		InputIndex: 39,
-		Length:     16,
+		Length:     13,
 	}, {
-		InputIndex: 60,
+		InputIndex: 57,
 		Length:     19,
 	}, {
-		InputIndex: 80,
-		Length:     19,
+		InputIndex: 77,
+		Length:     23,
 	}})
 }
-//
-//
-//func (this *SanitizeFixture) TestRedactSSN() {
-//	input := "Hello my name is John, my SSN is: 111-11-1111 my employees SSN is 111111111 and 111 11 1111."
-//	expectedOutput := "Hello my name is John, my SSN is: [SSN REDACTED] my employees SSN is [SSN REDACTED] and [SSN REDACTED]."
-//
-//	output := SSN(input)
-//
-//	this.So(output, should.Resemble, expectedOutput)
-//}
-//
-//func (this *SanitizeFixture) TestRedactTelephone() {
-//	input := "Hello my name is John, my number is: 1(801) 111-1111 and (111)111 1111 also 1111111111 one more 1-801-111-1111."
-//	expectedOutput := "Hello my name is John, my number is: [PHONE REDACTED] and [PHONE REDACTED] also [PHONE REDACTED] one more [PHONE REDACTED]."
-//
-//	output := Phone(input)
-//
-//	this.So(output, should.Resemble, expectedOutput)
-//}
-//
-//func (this *SanitizeFixture) TestRedactAll() {
-//	input := "Hello my name is John, my email address is john@test.com. My phone-number is 1-111-111-1111, my birthday is 1/11/1111, and my CC is 1111111111111."
-//	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED]. My phone-number is [PHONE REDACTED], my birthday is [DOB REDACTED], and my CC is [CARD 1111****1111]."
-//
-//	output := All(input)
-//
-//	this.So(output, should.Resemble, expectedOutput)
 
+func(this *SanitizeFixture) TestRedactCreditCard(){
+	input := "Blah 1234-5678-9012-3450. CC number is 1111111111118 and 1234 5678 9012 3450 1234-5678-9012-3450"
+	expected := "Blah *******************. CC number is ************* and ******************* *******************"
+
+	actual := All(input)
+
+	this.So(actual, should.Equal,expected)
+}
+
+func (this *SanitizeFixture) TestMatchEmail(){
+	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
+		"test@test."
+	this.So(matchEmail(input), should.Resemble, []match{{
+		InputIndex: 5,
+		Length:     10,
+	}, {
+		InputIndex: 45,
+		Length:     10,
+	}, {
+		InputIndex: 107,
+		Length: 9,
+	}})
+}
+
+func(this *SanitizeFixture) TestRedactEmail() {
+	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
+		"test@test."
+	expected := "Blah **********.com, our employee's email is **********. and we have one more which may or not be an email " +
+		"*********."
+
+	actual := All(input)
+
+	this.So(actual, should.Equal,expected)
+}
+
+func(this *SanitizeFixture) TestMatchPhoneNum(){
+	input := "Blah 801-111-1111"
+	this.So(matchPhoneNum(input), should.Resemble, []match{{
+		InputIndex: 5,
+		Length: 12,
+	}})
+}

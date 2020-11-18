@@ -10,10 +10,11 @@ func All(input string) string {
 	var matches []match
 	matches = append(matches, matchCreditCard(input)...)
 	matches = append(matches, matchEmail(input)...)
-	return RedactMatches(input, matches)
+	matches = append(matches, matchPhoneNum(input)...)
+	return redactMatches(input, matches)
 }
 
-func RedactMatches(input string, matches []match) string {
+func redactMatches(input string, matches []match) string {
 	for _, match := range matches {
 		input = strings.ReplaceAll(input, input[match.InputIndex:match.InputIndex+match.Length], strings.Repeat("*", match.Length))
 	}
@@ -70,7 +71,7 @@ func matchCreditCard(input string) (matches []match) {
 	for i := 0; i < len(input); i++ {
 		character := input[i]
 		if !isNumeric(character) {
-			if isCreditCard(length, total) {
+			if isCreditCard(length, input[start: start + length]) {
 				matches = append(matches, match{InputIndex: start, Length: length})
 				length = 0
 				start = i + 1
@@ -97,15 +98,40 @@ func matchCreditCard(input string) (matches []match) {
 		}
 	}
 
-	if isCreditCard(length, total) {
+	if isCreditCard(length, input[start:len(input) - 1]) {
 		matches = append(matches, match{InputIndex: start, Length: length})
 	}
 
 	return matches
 }
-func isCreditCard(length, total int) bool {
-	return length >= 13 && length <= 24 && total%10 == 0
+func isCreditCard(length int, input string) bool {
+	return length >= 13 && length <= 24 && checkLuhn(input)
 }
+
+func checkLuhn(input string) bool {
+	nDigits := len(input)
+	var nSum int
+	var isSecond bool
+	for i := nDigits - 2; i >= 0; i-- {
+		if !isNumeric(input[i]) {
+			continue
+		}
+		d := input[i] - '0'
+		if isSecond == false {
+			d = d * 2
+		}
+		if d > 9{
+			d -= 9
+		}
+		digit := int(d)
+		nSum += digit
+		isSecond = !isSecond
+	}
+	temp := int(input[nDigits - 1] - '0')
+	mod := nSum%10
+	return  mod == temp
+}
+
 func breakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')'
 }
@@ -136,6 +162,9 @@ func matchPhoneNum(input string) (matches []match) {
 			isCandidate = true
 			start = i + 1
 		}
+	}
+	if isPhoneNumber(length) {
+		matches = append(matches, match{InputIndex: start, Length: length})
 	}
 	return matches
 }

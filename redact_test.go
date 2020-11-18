@@ -43,32 +43,32 @@ type SanitizeFixture struct {
 //}
 
 func (this *SanitizeFixture) TestMatchCreditCard() {
-	input := "Blah 1234-5678-9012-3450. CC number is 1111111111118 and 1234 5678 9012 3450 1234-5678-9012-3455-230"
-	this.So(matchCreditCard(input),should.Resemble, []match{{
+	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 6011-7674-3539-9843"
+	this.So(matchCreditCard(input), should.Resemble, []match{{
 		InputIndex: 5,
 		Length:     19,
 	}, {
 		InputIndex: 39,
-		Length:     13,
+		Length:     14,
 	}, {
-		InputIndex: 57,
+		InputIndex: 58,
 		Length:     19,
 	}, {
-		InputIndex: 77,
-		Length:     23,
+		InputIndex: 78,
+		Length:     19,
 	}})
 }
 
-func(this *SanitizeFixture) TestRedactCreditCard(){
-	input := "Blah 1234-5678-9012-3450. CC number is 1111111111118 and 1234 5678 9012 3450 1234-5678-9012-3450"
-	expected := "Blah *******************. CC number is ************* and ******************* *******************"
+func (this *SanitizeFixture) TestRedactCreditCard() {
+	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 6011-7674-3539-9843"
+	expected := "Blah *******************. CC number is ************** and ******************* *******************"
 
 	actual := All(input)
 
-	this.So(actual, should.Equal,expected)
+	this.So(actual, should.Equal, expected)
 }
 
-func (this *SanitizeFixture) TestMatchEmail(){
+func (this *SanitizeFixture) TestMatchEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
 		"test@test."
 	this.So(matchEmail(input), should.Resemble, []match{{
@@ -79,11 +79,11 @@ func (this *SanitizeFixture) TestMatchEmail(){
 		Length:     10,
 	}, {
 		InputIndex: 107,
-		Length: 9,
+		Length:     9,
 	}})
 }
 
-func(this *SanitizeFixture) TestRedactEmail() {
+func (this *SanitizeFixture) TestRedactEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
 		"test@test."
 	expected := "Blah **********.com, our employee's email is **********. and we have one more which may or not be an email " +
@@ -91,13 +91,37 @@ func(this *SanitizeFixture) TestRedactEmail() {
 
 	actual := All(input)
 
-	this.So(actual, should.Equal,expected)
+	this.So(actual, should.Equal, expected)
 }
 
-func(this *SanitizeFixture) TestMatchPhoneNum(){
-	input := "Blah 801-111-1111"
-	this.So(matchPhoneNum(input), should.Resemble, []match{{
-		InputIndex: 5,
-		Length: 12,
-	}})
+func (this *SanitizeFixture) TestMatchPhoneNum() {
+	input := "Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111"
+	this.So(matchPhoneNum(input), should.Resemble, []match{
+		{
+			InputIndex: 5,
+			Length:     12,
+		},
+		{
+			InputIndex: 22,
+			Length:     12,
+		},
+		{
+			InputIndex: 39,
+			Length:     14,
+		},
+		{
+			InputIndex: 56,
+			Length:     13,
+		},
+	})
 }
+func (this *SanitizeFixture) TestRedactPhoneNum() {
+	input := "Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111"
+
+	expected := "Blah ************ and ************ and ************** +1*************"
+
+	actual := All(input)
+
+	this.So(actual, should.Equal, expected)
+}
+

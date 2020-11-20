@@ -43,7 +43,7 @@ type SanitizeFixture struct {
 //}
 
 func (this *SanitizeFixture) TestMatchCreditCard() {
-	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 6011-7674-3539-9843"
+	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco"
 	this.So(matchCreditCard(input), should.Resemble, []match{{
 		InputIndex: 5,
 		Length:     19,
@@ -52,16 +52,16 @@ func (this *SanitizeFixture) TestMatchCreditCard() {
 		Length:     14,
 	}, {
 		InputIndex: 58,
-		Length:     19,
+		Length:     23,
 	}, {
-		InputIndex: 78,
+		InputIndex: 82,
 		Length:     19,
 	}})
 }
 
 func (this *SanitizeFixture) TestRedactCreditCard() {
-	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 6011-7674-3539-9843"
-	expected := "Blah *******************. CC number is ************** and ******************* *******************"
+	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco "
+	expected := "Blah *******************. CC number is ************** and *********************** ******************* taco "
 
 	actual := All(input)
 
@@ -70,7 +70,7 @@ func (this *SanitizeFixture) TestRedactCreditCard() {
 
 func (this *SanitizeFixture) TestMatchEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
-		"test@test."
+		"test@test. taco"
 	this.So(matchEmail(input), should.Resemble, []match{{
 		InputIndex: 5,
 		Length:     10,
@@ -85,9 +85,9 @@ func (this *SanitizeFixture) TestMatchEmail() {
 
 func (this *SanitizeFixture) TestRedactEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
-		"test@test."
+		"test@test. taco"
 	expected := "Blah **********.com, our employee's email is **********. and we have one more which may or not be an email " +
-		"*********."
+		"*********. taco"
 
 	actual := All(input)
 
@@ -116,12 +116,41 @@ func (this *SanitizeFixture) TestMatchPhoneNum() {
 	})
 }
 func (this *SanitizeFixture) TestRedactPhoneNum() {
-	input := "Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111"
+	input := "Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111 taco"
 
-	expected := "Blah ************ and ************ and ************** +1*************"
+	expected := "Blah ************ and ************ and ************** +1************* taco"
 
 	actual := All(input)
 
 	this.So(actual, should.Equal, expected)
 }
+
+func (this *SanitizeFixture) TestMatchSSN(){
+	input := "Blah 123-12-1234 and 123121234 or 123 12 1234 taco"
+
+	this.So(matchSSN(input), should.Resemble, []match{
+		{
+			InputIndex: 5,
+			Length:     11,
+		},
+		{
+			InputIndex: 21,
+			Length:     9,
+		},
+		{
+			InputIndex: 34,
+			Length:     11,
+		},
+	})
+}
+func (this *SanitizeFixture) TestRedactSSN() {
+	input := "Blah 123-12-1234 and 123121234 or 123 12 1234 taco"
+
+	expected := "Blah *********** and ********* or *********** taco"
+
+	actual := All(input)
+
+	this.So(actual, should.Equal, expected)
+}
+
 

@@ -222,14 +222,14 @@ func matchDOB(input string) (matches []match) {
 			continue
 		}
 		if !isNumeric(character) {
-			if breakNotFound(character){
+			if breakNotFound(character) {
 				monthLength++
 				start = i + 1
 				length = 0
 				isCandidate = false
 				continue
 			}
-			if isMonth(input[monthStart:monthStart + monthLength]){
+			if isMonth(input[monthStart : monthStart+monthLength]) {
 				monthCandidate = true
 				continue
 			}
@@ -249,7 +249,7 @@ func matchDOB(input string) (matches []match) {
 			start = i + 1
 		}
 		if length == 2 && monthCandidate {
-			matches = appendMatches(matches, monthStart, monthLength + length + 1)
+			matches = appendMatches(matches, monthStart, monthLength+length+1)
 			monthCandidate = false
 			length = 0
 			start = 0
@@ -286,13 +286,14 @@ func appendMatches(matches []match, start, length int) []match {
 	}
 	return append(matches, match{InputIndex: start, Length: length})
 }
+
 type match struct {
 	InputIndex int
 	Length     int
 }
 
-var(
-	used = make(map[int]struct{})
+var (
+	used   = make(map[int]struct{})
 	months = map[string]struct{}{
 		"January":   {},
 		"Jan":       {},
@@ -320,4 +321,3 @@ var(
 		"Dec":       {},
 	}
 )
-

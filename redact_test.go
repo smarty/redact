@@ -19,24 +19,27 @@ func (this *SanitizeFixture) Teardown() {
 	used = make(map[int]struct{})
 }
 
-
 func (this *SanitizeFixture) TestMatchCreditCard() {
 	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco"
-	this.So(matchCreditCard(input), should.Resemble, []match{{
-		InputIndex: 5,
-		Length:     19,
-	}, {
-		InputIndex: 39,
-		Length:     14,
-	}, {
-		InputIndex: 58,
-		Length:     23,
-	}, {
-		InputIndex: 82,
-		Length:     19,
-	}})
+	this.So(matchCreditCard(input), should.Resemble, []match{
+		{
+			InputIndex: 5,
+			Length:     19,
+		},
+		{
+			InputIndex: 39,
+			Length:     14,
+		},
+		{
+			InputIndex: 58,
+			Length:     23,
+		},
+		{
+			InputIndex: 82,
+			Length:     19,
+		},
+	})
 }
-
 func (this *SanitizeFixture) TestRedactCreditCard() {
 	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco "
 	expected := "Blah *******************. CC number is ************** and *********************** ******************* taco "
@@ -49,18 +52,21 @@ func (this *SanitizeFixture) TestRedactCreditCard() {
 func (this *SanitizeFixture) TestMatchEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
 		"test@test. taco"
-	this.So(matchEmail(input), should.Resemble, []match{{
-		InputIndex: 5,
-		Length:     10,
-	}, {
-		InputIndex: 45,
-		Length:     10,
-	}, {
-		InputIndex: 107,
-		Length:     9,
-	}})
+	this.So(matchEmail(input), should.Resemble, []match{
+		{
+			InputIndex: 5,
+			Length:     10,
+		},
+		{
+			InputIndex: 45,
+			Length:     10,
+		},
+		{
+			InputIndex: 107,
+			Length:     9,
+		},
+	})
 }
-
 func (this *SanitizeFixture) TestRedactEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
 		"test@test. taco"
@@ -157,7 +163,6 @@ func (this *SanitizeFixture) TestMatchDOB() {
 		},
 	})
 }
-
 func (this *SanitizeFixture) TestRedactDOB() {
 	input := "Blah 12-01-1998 and 12/01/1998 or 1 3 98 and March 09, 1997 and 09 May 1900 taco"
 

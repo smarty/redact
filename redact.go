@@ -1,75 +1,25 @@
 package redact
 
 import (
-	"regexp"
-	"strconv"
 	"strings"
 )
 
 func All(input string) string {
 	var matches []match
 	matches = append(matches, matchCreditCard(input)...)
-	input = redactMatches(input, matches)
 	matches = append(matches, matchEmail(input)...)
-	input = redactMatches(input, matches)
 	matches = append(matches, matchPhoneNum(input)...)
-	input = redactMatches(input, matches)
 	matches = append(matches, matchSSN(input)...)
+	matches = append(matches, matchDOB(input)...)
 	return redactMatches(input, matches)
 }
 
 func redactMatches(input string, matches []match) string {
-	indexes := make(map[int]struct{})
 	for _, match := range matches {
-		if _, found := indexes[match.InputIndex]; !found {
-			indexes[match.InputIndex] = struct{}{}
-			replace := input[match.InputIndex : match.InputIndex+match.Length]
-			input = strings.ReplaceAll(input, replace, strings.Repeat("*", match.Length))
-		}
+		replace := input[match.InputIndex : match.InputIndex+match.Length]
+		input = strings.ReplaceAll(input, replace, strings.Repeat("*", match.Length))
 	}
 	return input
-}
-
-//
-//func DateOfBirth(input string) string {
-//	found := findDOB(input)
-//	for _, item := range found {
-//		input = strings.ReplaceAll(input, item, "[DOB REDACTED]")
-//	}
-//	return input
-//}
-//func findDOB(input string) (dates []string) {
-//	dates = append(dates, datesWithDashes.FindAllString(input, 1000000)...)
-//	dates = append(dates, datesWithSlashes.FindAllString(input, 1000000)...)
-//	dates = append(dates, datesInUSFormat.FindAllString(input, 1000000)...)
-//	dates = append(dates, datesInEUFormat.FindAllString(input, 1000000)...)
-//
-//	return dates
-//}
-//
-
-func matchEmail(input string) (matches []match) {
-	var start int
-	var length int
-	var isCandidate bool
-	for i := 0; i < len(input); i++ {
-		character := input[i]
-		if !breakNotFound(character) {
-			if isCandidate {
-				matches = append(matches, match{InputIndex: start, Length: length})
-			}
-			start = i + 1
-			length = 0
-			isCandidate = false
-			continue
-		} else {
-			length++
-			if character == '@' {
-				isCandidate = true
-			}
-		}
-	}
-	return matches
 }
 
 func matchCreditCard(input string) (matches []match) {
@@ -81,7 +31,7 @@ func matchCreditCard(input string) (matches []match) {
 		character := input[i]
 		if !isNumeric(character) {
 			if isCreditCard(length, input[start:start+length]) {
-				matches = append(matches, match{InputIndex: start, Length: length})
+				matches = appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				total = 0
@@ -110,7 +60,7 @@ func matchCreditCard(input string) (matches []match) {
 		length++
 	}
 	if isCreditCard(length, input[start:start+length]) {
-		matches = append(matches, match{InputIndex: start, Length: length})
+		matches = appendMatches(matches, start, length)
 	}
 
 	return matches
@@ -118,7 +68,6 @@ func matchCreditCard(input string) (matches []match) {
 func isCreditCard(length int, input string) bool {
 	return length >= 13 && length <= 24 && checkLuhn(input)
 }
-
 func checkLuhn(input string) bool {
 	nDigits := len(input)
 	var nSum int
@@ -143,8 +92,31 @@ func checkLuhn(input string) bool {
 	return mod == temp
 }
 
-func breakNotFound(character byte) bool {
-	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')'
+func matchEmail(input string) (matches []match) {
+	var start int
+	var length int
+	var isCandidate bool
+	for i := 0; i < len(input); i++ {
+		character := input[i]
+		if _, found := used[i]; found {
+			continue
+		}
+		if !breakNotFound(character) {
+			if isCandidate {
+				matches = appendMatches(matches, start, length)
+			}
+			start = i + 1
+			length = 0
+			isCandidate = false
+			continue
+		} else {
+			length++
+			if character == '@' {
+				isCandidate = true
+			}
+		}
+	}
+	return matches
 }
 
 func matchPhoneNum(input string) (matches []match) {
@@ -152,6 +124,9 @@ func matchPhoneNum(input string) (matches []match) {
 	var length int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
+		if _, found := used[i]; found {
+			continue
+		}
 		character := input[i]
 		if !isNumeric(character) {
 			if character == '+' {
@@ -159,16 +134,16 @@ func matchPhoneNum(input string) (matches []match) {
 				length--
 				continue
 			}
-			if isPhoneNumber(length) {
-				matches = append(matches, match{InputIndex: start, Length: length})
-				length = 0
-				start = i + 1
-				continue
-			}
-			if breakNotFound(character)  {
+			if breakNotFound(character) {
 				start = i + 1
 				length = 0
 				isCandidate = false
+				continue
+			}
+			if isPhoneNumber(length) {
+				matches = appendMatches(matches, start, length)
+				length = 0
+				start = i + 1
 				continue
 			}
 		}
@@ -177,29 +152,32 @@ func matchPhoneNum(input string) (matches []match) {
 		} else {
 			isCandidate = true
 			start = i + 1
+			length = 0
 		}
 	}
-	if isNumeric(input[len(input)-1]){
+	if isNumeric(input[len(input)-1]) {
 		length++
 	}
 	if isPhoneNumber(length) {
-		matches = append(matches, match{InputIndex: start, Length: length})
+		matches = appendMatches(matches, start, length)
 	}
 	return matches
 }
 func isPhoneNumber(length int) bool {
 	return length >= 10 && length <= 14
 }
-
 func matchSSN(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
+		if _, found := used[i]; found {
+			continue
+		}
 		if !isNumeric(character) {
 			if isSSN(length) {
-				matches = append(matches, match{InputIndex: start, Length: length})
+				matches = appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -222,7 +200,7 @@ func matchSSN(input string) (matches []match) {
 		length++
 	}
 	if isSSN(length) {
-		matches = append(matches, match{InputIndex: start, Length: length})
+		matches = appendMatches(matches, start, length)
 	}
 	return matches
 }
@@ -230,74 +208,116 @@ func matchSSN(input string) (matches []match) {
 func isSSN(length int) bool {
 	return length >= 9 && length <= 11
 }
+func matchDOB(input string) (matches []match) {
+	var start int
+	var length int
+	var isCandidate bool
+	var monthStart int
+	var monthLength int
+	var monthCandidate bool
 
-//func SSN(input string) string {
-//	found := findSSN(input)
-//	for _, item := range found {
-//		input = strings.ReplaceAll(input, item, "[SSN REDACTED]")
-//	}
-//	return input
-//}
-//func findSSN(input string) (SSNs []string) {
-//	var temp string
-//	for i, character := range input {
-//		if breakNotFound(character) {
-//			temp = fmt.Sprintf("%s%c", temp, character)
-//		} else {
-//			if spaceDelimitedCandidate(input, i) {
-//				temp += " "
-//			} else {
-//				// Find index and store location
-//				appendCandidate(temp, &SSNs, 9, 11)
-//				temp = ""
-//			}
-//		}
-//	}
-//	return SSNs
-//}
-//
-
-func appendCandidate(temp string, items *[]string, min, max int) {
-	lengthTemp := len(temp)
-	if lengthTemp >= min && lengthTemp <= max {
-		new := strings.ReplaceAll(temp, "-", "")
-		new = strings.ReplaceAll(new, " ", "")
-		new = strings.ReplaceAll(new, "(", "")
-		new = strings.ReplaceAll(new, ")", "")
-		if _, err := strconv.Atoi(new); err == nil {
-			*items = append(*items, temp)
+	for i := 0; i < len(input)-1; i++ {
+		character := input[i]
+		if _, found := used[i]; found {
+			continue
+		}
+		if !isNumeric(character) {
+			if breakNotFound(character){
+				monthLength++
+				start = i + 1
+				length = 0
+				isCandidate = false
+				continue
+			}
+			if isMonth(input[monthStart:monthStart + monthLength]){
+				monthCandidate = true
+				continue
+			}
+			monthStart = i + 1
+			monthLength = 0
+			if isDOB(length) {
+				matches = appendMatches(matches, start, length)
+				length = 0
+				start = i + 1
+				continue
+			}
+		}
+		if isCandidate || monthCandidate {
+			length++
+		} else {
+			isCandidate = true
+			start = i + 1
+		}
+		if length == 2 && monthCandidate {
+			matches = appendMatches(matches, monthStart, monthLength + length + 1)
+			monthCandidate = false
+			length = 0
+			start = 0
+			monthStart = 0
+			monthLength = 0
 		}
 	}
-}
-func appendTelCandidate(temp string, items *[]string, min, max int) {
-	lengthTemp := len(temp)
-	if lengthTemp == 11 && strings.Contains(temp, "-") {
-		return
+	if isNumeric(input[len(input)-1]) {
+		length++
 	}
-	if resemblesCC(temp, lengthTemp) {
-		return
+	if isDOB(length) {
+		matches = appendMatches(matches, start, length)
 	}
-	appendCandidate(temp, items, min, max)
+	return matches
 }
-func resemblesCC(temp string, lengthTemp int) bool {
-	return lengthTemp > 12 && !((strings.Contains(temp, "(") || strings.Contains(temp, ")")) || strings.Contains(temp, " ") || strings.Contains(temp, "-"))
+
+func isDOB(length int) bool {
+	return length >= 6 && length <= 10
 }
-func spaceDelimitedCandidate(input string, i int) bool {
-	return i+1 < len(input) && ('0' <= input[i+1] && input[i+1] <= '9') && ('0' <= input[i-1] && input[i-1] <= '9' || input[i-1] == ')')
+func isMonth(month string) bool {
+	_, found := months[month]
+	return found
 }
 func isNumeric(value byte) bool {
 	return value >= '0' && value <= '9'
 }
 
+func breakNotFound(character byte) bool {
+	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')' && character != '/'
+}
+func appendMatches(matches []match, start, length int) []match {
+	for i := start; i <= start+length; i++ {
+		used[i] = struct{}{}
+	}
+	return append(matches, match{InputIndex: start, Length: length})
+}
 type match struct {
 	InputIndex int
 	Length     int
 }
 
-var (
-	datesWithDashes  = regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
-	datesWithSlashes = regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
-	datesInUSFormat  = regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
-	datesInEUFormat  = regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
-	Separator        = map[int32]struct{}{'.': {}, '/': {}, ' ': {}, '-': {}}
+var(
+	used = make(map[int]struct{})
+	months = map[string]struct{}{
+		"January":   {},
+		"Jan":       {},
+		"February":  {},
+		"Feb":       {},
+		"March":     {},
+		"Mar":       {},
+		"April":     {},
+		"Apr":       {},
+		"May":       {},
+		"June":      {},
+		"Jun":       {},
+		"July":      {},
+		"Jul":       {},
+		"August":    {},
+		"Aug":       {},
+		"September": {},
+		"Sep":       {},
+		"Sept":      {},
+		"October":   {},
+		"Oct":       {},
+		"November":  {},
+		"Nov":       {},
+		"December":  {},
+		"Dec":       {},
+	}
 )
+

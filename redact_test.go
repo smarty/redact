@@ -8,39 +8,17 @@ import (
 )
 
 func TestSanitizeFixture(t *testing.T) {
-	gunit.Run(new(SanitizeFixture), t)
+	gunit.Run(new(SanitizeFixture), t, gunit.Options.AllSequential())
 }
 
 type SanitizeFixture struct {
 	*gunit.Fixture
 }
 
-//func (this *SanitizeFixture) TestRedactDOB() {
-//	input := "Hello my name is John, my date of birth is 11/1/2000 and my employee's date of birth is 01-01-2001, oh also November 1, 2000, May 23, 2019, 23 June 1989, Sept 4, 2010."
-//	expectedOutput := "Hello my name is John, my date of birth is [DOB REDACTED] and my employee's date of birth is [DOB REDACTED], oh also [DOB REDACTED], [DOB REDACTED], [DOB REDACTED], [DOB REDACTED]."
-//
-//	output := DateOfBirth(input) // TODO: change to ALL
-//
-//	this.So(output, should.Resemble, expectedOutput)
-//}
-//
-//func (this *SanitizeFixture) TestRedactEmail() {
-//	input := "Hello my name is John, my email address is john@test.com and my employee's email is jake@test.com and Jake Smith <jake@smith.com>."
-//	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED] and my employee's email is [EMAIL REDACTED] and Jake Smith <[EMAIL REDACTED]>."
-//
-//	output := Email(input)
-//
-//	this.So(output, should.Resemble, expectedOutput)
-//}
-//
-//func (this *SanitizeFixture) SkipTestRedactCreditCard() {
-//	input := "Hello my name is John, my Credit card number is: 1111-1111-1111-1111. My employees CC number is 1111111111111111 and 1111 1111 1111 1111 plus 1111111111111."
-//	expectedOutput := "Hello my name is John, my Credit card number is: [CARD 1111****1111]. My employees CC number is [CARD 1111****1111] and [CARD 1111****1111] plus [CARD 1111****1111]."
-//
-//	output := CreditCard(input)
-//
-//	this.So(output, should.Resemble, expectedOutput)
-//}
+func (this *SanitizeFixture) Teardown() {
+	used = make(map[int]struct{})
+}
+
 
 func (this *SanitizeFixture) TestMatchCreditCard() {
 	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco"
@@ -125,7 +103,7 @@ func (this *SanitizeFixture) TestRedactPhoneNum() {
 	this.So(actual, should.Equal, expected)
 }
 
-func (this *SanitizeFixture) TestMatchSSN(){
+func (this *SanitizeFixture) TestMatchSSN() {
 	input := "Blah 123-12-1234 and 123121234 or 123 12 1234 taco"
 
 	this.So(matchSSN(input), should.Resemble, []match{
@@ -153,4 +131,39 @@ func (this *SanitizeFixture) TestRedactSSN() {
 	this.So(actual, should.Equal, expected)
 }
 
+func (this *SanitizeFixture) TestMatchDOB() {
+	input := "Blah 12-01-1998 and 12/01/1998 or 1 3 98 and March 09, 1997 and 09 May 1900 taco"
 
+	this.So(matchDOB(input), should.Resemble, []match{
+		{
+			InputIndex: 5,
+			Length:     10,
+		},
+		{
+			InputIndex: 20,
+			Length:     10,
+		},
+		{
+			InputIndex: 34,
+			Length:     6,
+		},
+		{
+			InputIndex: 45,
+			Length:     8,
+		},
+		{
+			InputIndex: 67,
+			Length:     6,
+		},
+	})
+}
+
+func (this *SanitizeFixture) TestRedactDOB() {
+	input := "Blah 12-01-1998 and 12/01/1998 or 1 3 98 and March 09, 1997 and 09 May 1900 taco"
+
+	expected := "Blah ********** and ********** or ****** and ********, 1997 and 09 ******00 taco"
+
+	actual := All(input)
+
+	this.So(actual, should.Equal, expected)
+}

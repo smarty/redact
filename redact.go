@@ -7,6 +7,7 @@ func All(input string) string {
 	matches = append(matches, matchPhoneNum(input)...)
 	matches = append(matches, matchSSN(input)...)
 	matches = append(matches, matchDOB(input)...)
+	// TODO: Reset the 'used' map here. We shouldn't be doing this in the tests and it's served it's purpose by this point in the program
 	return redactMatches(input, matches)
 }
 

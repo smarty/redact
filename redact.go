@@ -1,9 +1,5 @@
 package redact
 
-import (
-	"strings"
-)
-
 func All(input string) string {
 	var matches []match
 	matches = append(matches, matchCreditCard(input)...)
@@ -15,11 +11,29 @@ func All(input string) string {
 }
 
 func redactMatches(input string, matches []match) string {
-	for _, match := range matches {
-		replace := input[match.InputIndex : match.InputIndex+match.Length]
-		input = strings.ReplaceAll(input, replace, strings.Repeat("*", match.Length))
+	if len(matches) == 0 {
+		return input // no changes to redact
 	}
-	return input
+
+	buffer := []byte(input)
+	bufferLength := len(buffer)
+	var lowIndex, highIndex int
+
+	for _, match := range matches {
+		lowIndex = match.InputIndex
+		highIndex = lowIndex + match.Length
+		if lowIndex < 0 {
+			continue
+		}
+		if highIndex >= bufferLength {
+			continue
+		}
+		for ; lowIndex < highIndex; lowIndex++ {
+			buffer[lowIndex] = '*'
+		}
+	}
+
+	return string(buffer)
 }
 
 func matchCreditCard(input string) (matches []match) {

@@ -37,6 +37,8 @@ func redactMatches(input string, matches []match) string {
 }
 
 func matchCreditCard(input string) (matches []match) {
+	// TODO: inline checkLuhn into this algorithm--this avoids having to create a string to ask if it's a credit card
+	// instead we track each numeric digit here and run a tally as we go along
 	var start int
 	var length int
 	var isCandidate bool

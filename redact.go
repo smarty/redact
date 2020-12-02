@@ -92,7 +92,7 @@ func sanitizeCreditCard(cards []string, input string) string {
 		new = strings.ReplaceAll(new, " ", "")
 		// TODO: add an if statement for length check & change to only output the last 4 not 12-on
 		// TODO: must pass LUHN/MOD10 algorithm
-		new = fmt.Sprintf("[CARD %s****%s]", new[:4], new[len(new) - 4:])
+		new = fmt.Sprintf("[CARD %s****%s]", new[:4], new[len(new)-4:])
 		input = strings.ReplaceAll(input, card, new)
 	}
 	return input

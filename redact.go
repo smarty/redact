@@ -1,17 +1,33 @@
 package redact
 
-func All(input string) string {
-	var matches []match
-	matches = append(matches, matchCreditCard(input)...)
-	matches = append(matches, matchEmail(input)...)
-	matches = append(matches, matchPhoneNum(input)...)
-	matches = append(matches, matchSSN(input)...)
-	matches = append(matches, matchDOB(input)...)
-	// TODO: Reset the 'used' map here. We shouldn't be doing this in the tests and it's served it's purpose by this point in the program
-	return redactMatches(input, matches)
+type Redaction struct {
+	originalInput string
+	used          map[int]struct{}
 }
 
-func redactMatches(input string, matches []match) string {
+func New() *Redaction {
+	return &Redaction{used: make(map[int]struct{})}
+}
+
+func (this *Redaction) All(input string) string {
+	var matches []match
+	matches = append(matches, this.matchCreditCard(input)...)
+	matches = append(matches, this.matchEmail(input)...)
+	matches = append(matches, this.matchPhoneNum(input)...)
+	matches = append(matches, this.matchSSN(input)...)
+	matches = append(matches, this.matchDOB(input)...)
+
+	this.clear()
+	return this.redactMatches(input, matches)
+}
+
+func (this *Redaction) clear() {
+	for key, _ := range this.used {
+		delete(this.used, key)
+	}
+}
+
+func (this *Redaction) redactMatches(input string, matches []match) string {
 	if len(matches) == 0 {
 		return input // no changes to redact
 	}
@@ -37,7 +53,7 @@ func redactMatches(input string, matches []match) string {
 	return string(buffer)
 }
 
-func matchCreditCard(input string) (matches []match) {
+func (this *Redaction) matchCreditCard(input string) (matches []match) {
 	// TODO: inline checkLuhn into this algorithm--this avoids having to create a string to ask if it's a credit card
 	// instead we track each numeric digit here and run a tally as we go along
 	var start int
@@ -48,7 +64,7 @@ func matchCreditCard(input string) (matches []match) {
 		character := input[i]
 		if !isNumeric(character) {
 			if isCreditCard(length, input[start:start+length]) {
-				matches = appendMatches(matches, start, length)
+				matches = this.appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				total = 0
@@ -109,18 +125,18 @@ func checkLuhn(input string) bool {
 	return mod == temp
 }
 
-func matchEmail(input string) (matches []match) {
+func (this *Redaction) matchEmail(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
 	for i := 0; i < len(input); i++ {
 		character := input[i]
-		if _, found := used[i]; found {
+		if _, found := this.used[i]; found {
 			continue
 		}
 		if !breakNotFound(character) {
 			if isCandidate {
-				matches = appendMatches(matches, start, length)
+				matches = this.appendMatches(matches, start, length)
 			}
 			start = i + 1
 			length = 0
@@ -136,12 +152,12 @@ func matchEmail(input string) (matches []match) {
 	return matches
 }
 
-func matchPhoneNum(input string) (matches []match) {
+func (this *Redaction) matchPhoneNum(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
-		if _, found := used[i]; found {
+		if _, found := this.used[i]; found {
 			continue
 		}
 		character := input[i]
@@ -158,7 +174,7 @@ func matchPhoneNum(input string) (matches []match) {
 				continue
 			}
 			if isPhoneNumber(length) {
-				matches = appendMatches(matches, start, length)
+				matches = this.appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -176,25 +192,26 @@ func matchPhoneNum(input string) (matches []match) {
 		length++
 	}
 	if isPhoneNumber(length) {
-		matches = appendMatches(matches, start, length)
+		matches = this.appendMatches(matches, start, length)
 	}
 	return matches
 }
 func isPhoneNumber(length int) bool {
 	return length >= 10 && length <= 14
 }
-func matchSSN(input string) (matches []match) {
+
+func (this *Redaction) matchSSN(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-		if _, found := used[i]; found {
+		if _, found := this.used[i]; found {
 			continue
 		}
 		if !isNumeric(character) {
 			if isSSN(length) {
-				matches = appendMatches(matches, start, length)
+				matches = this.appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -221,11 +238,11 @@ func matchSSN(input string) (matches []match) {
 	}
 	return matches
 }
-
 func isSSN(length int) bool {
 	return length >= 9 && length <= 11
 }
-func matchDOB(input string) (matches []match) {
+
+func (this *Redaction) matchDOB(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -235,7 +252,7 @@ func matchDOB(input string) (matches []match) {
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-		if _, found := used[i]; found {
+		if _, found := this.used[i]; found {
 			continue
 		}
 		if !isNumeric(character) {
@@ -253,7 +270,7 @@ func matchDOB(input string) (matches []match) {
 			monthStart = i + 1
 			monthLength = 0
 			if isDOB(length) {
-				matches = appendMatches(matches, start, length)
+				matches = this.appendMatches(matches, start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -266,7 +283,7 @@ func matchDOB(input string) (matches []match) {
 			start = i + 1
 		}
 		if length == 2 && monthCandidate {
-			matches = appendMatches(matches, monthStart, monthLength+length+1)
+			matches = this.appendMatches(matches, monthStart, monthLength+length+1)
 			monthCandidate = false
 			length = 0
 			start = 0
@@ -282,7 +299,6 @@ func matchDOB(input string) (matches []match) {
 	}
 	return matches
 }
-
 func isDOB(length int) bool {
 	return length >= 6 && length <= 10
 }
@@ -297,9 +313,9 @@ func isNumeric(value byte) bool {
 func breakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')' && character != '/'
 }
-func appendMatches(matches []match, start, length int) []match {
+func (this *Redaction) appendMatches(matches []match, start, length int) []match {
 	for i := start; i <= start+length; i++ {
-		used[i] = struct{}{}
+		this.used[i] = struct{}{}
 	}
 	return append(matches, match{InputIndex: start, Length: length})
 }
@@ -310,7 +326,6 @@ type match struct {
 }
 
 var (
-	used   = make(map[int]struct{})
 	months = map[string]struct{}{
 		"January":   {},
 		"Jan":       {},

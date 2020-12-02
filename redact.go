@@ -6,13 +6,16 @@ type Redaction struct {
 }
 
 func New() *Redaction {
-	return &Redaction{used: make(map[int]struct{}, 128)}
+	return &Redaction{
+		used:    make(map[int]struct{}, 128),
+		matches: make([]match, 0, 16),
+	}
 }
 
 func (this *Redaction) All(input string) string {
 	this.matchCreditCard(input)
 	this.matchEmail(input)
-	this.matchPhoneNum(input)
+	this.matchPhone(input)
 	this.matchSSN(input)
 	this.matchDOB(input)
 	result := this.redactMatches(input)
@@ -54,8 +57,6 @@ func (this *Redaction) redactMatches(input string) string {
 }
 
 func (this *Redaction) matchCreditCard(input string) (matches []match) {
-	// TODO: inline checkLuhn into this algorithm--this avoids having to create a string to ask if it's a credit card
-	// instead we track each numeric digit here and run a tally as we go along
 	var start int
 	var length int
 	var isCandidate bool
@@ -63,6 +64,8 @@ func (this *Redaction) matchCreditCard(input string) (matches []match) {
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
 		if !isNumeric(character) {
+			// TODO: inline isCreditCard and checkLuhn into method--this avoids having to create a string to ask if it's a credit card
+			// instead we track each numeric digit here and run a tally as we go along
 			if isCreditCard(length, input[start:start+length]) {
 				this.appendMatch(start, length)
 				length = 0
@@ -152,7 +155,7 @@ func (this *Redaction) matchEmail(input string) (matches []match) {
 	return matches
 }
 
-func (this *Redaction) matchPhoneNum(input string) (matches []match) {
+func (this *Redaction) matchPhone(input string) (matches []match) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -263,6 +266,8 @@ func (this *Redaction) matchDOB(input string) (matches []match) {
 				isCandidate = false
 				continue
 			}
+			// TODO: this is allocating another string. Don't do dat.
+			// Instead, pass in the starting index and length and found out if it's a month
 			if isMonth(input[monthStart : monthStart+monthLength]) {
 				monthCandidate = true
 				continue
@@ -326,31 +331,29 @@ type match struct {
 	Length     int
 }
 
-var (
-	months = map[string]struct{}{
-		"January":   {},
-		"Jan":       {},
-		"February":  {},
-		"Feb":       {},
-		"March":     {},
-		"Mar":       {},
-		"April":     {},
-		"Apr":       {},
-		"May":       {},
-		"June":      {},
-		"Jun":       {},
-		"July":      {},
-		"Jul":       {},
-		"August":    {},
-		"Aug":       {},
-		"September": {},
-		"Sep":       {},
-		"Sept":      {},
-		"October":   {},
-		"Oct":       {},
-		"November":  {},
-		"Nov":       {},
-		"December":  {},
-		"Dec":       {},
-	}
-)
+var months = map[string]struct{}{
+	"January":   {},
+	"Jan":       {},
+	"February":  {},
+	"Feb":       {},
+	"March":     {},
+	"Mar":       {},
+	"April":     {},
+	"Apr":       {},
+	"May":       {},
+	"June":      {},
+	"Jun":       {},
+	"July":      {},
+	"Jul":       {},
+	"August":    {},
+	"Aug":       {},
+	"September": {},
+	"Sep":       {},
+	"Sept":      {},
+	"October":   {},
+	"Oct":       {},
+	"November":  {},
+	"Nov":       {},
+	"December":  {},
+	"Dec":       {},
+}

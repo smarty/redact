@@ -1,34 +1,34 @@
 package redact
 
 type Redaction struct {
-	originalInput string
-	used          map[int]struct{}
+	used    map[int]struct{}
+	matches []match
 }
 
 func New() *Redaction {
-	return &Redaction{used: make(map[int]struct{})}
+	return &Redaction{used: make(map[int]struct{}, 128)}
 }
 
 func (this *Redaction) All(input string) string {
-	var matches []match
-	matches = append(matches, this.matchCreditCard(input)...)
-	matches = append(matches, this.matchEmail(input)...)
-	matches = append(matches, this.matchPhoneNum(input)...)
-	matches = append(matches, this.matchSSN(input)...)
-	matches = append(matches, this.matchDOB(input)...)
-
+	this.matchCreditCard(input)
+	this.matchEmail(input)
+	this.matchPhoneNum(input)
+	this.matchSSN(input)
+	this.matchDOB(input)
+	result := this.redactMatches(input)
 	this.clear()
-	return this.redactMatches(input, matches)
+	return result
 }
 
 func (this *Redaction) clear() {
+	this.matches = this.matches[0:0]
 	for key, _ := range this.used {
 		delete(this.used, key)
 	}
 }
 
-func (this *Redaction) redactMatches(input string, matches []match) string {
-	if len(matches) == 0 {
+func (this *Redaction) redactMatches(input string) string {
+	if len(this.matches) == 0 {
 		return input // no changes to redact
 	}
 
@@ -36,7 +36,7 @@ func (this *Redaction) redactMatches(input string, matches []match) string {
 	bufferLength := len(buffer)
 	var lowIndex, highIndex int
 
-	for _, match := range matches {
+	for _, match := range this.matches {
 		lowIndex = match.InputIndex
 		highIndex = lowIndex + match.Length
 		if lowIndex < 0 {
@@ -64,7 +64,7 @@ func (this *Redaction) matchCreditCard(input string) (matches []match) {
 		character := input[i]
 		if !isNumeric(character) {
 			if isCreditCard(length, input[start:start+length]) {
-				matches = this.appendMatches(matches, start, length)
+				this.appendMatch(start, length)
 				length = 0
 				start = i + 1
 				total = 0
@@ -136,7 +136,7 @@ func (this *Redaction) matchEmail(input string) (matches []match) {
 		}
 		if !breakNotFound(character) {
 			if isCandidate {
-				matches = this.appendMatches(matches, start, length)
+				this.appendMatch(start, length)
 			}
 			start = i + 1
 			length = 0
@@ -174,7 +174,7 @@ func (this *Redaction) matchPhoneNum(input string) (matches []match) {
 				continue
 			}
 			if isPhoneNumber(length) {
-				matches = this.appendMatches(matches, start, length)
+				this.appendMatch(start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -192,7 +192,7 @@ func (this *Redaction) matchPhoneNum(input string) (matches []match) {
 		length++
 	}
 	if isPhoneNumber(length) {
-		matches = this.appendMatches(matches, start, length)
+		this.appendMatch(start, length)
 	}
 	return matches
 }
@@ -211,7 +211,7 @@ func (this *Redaction) matchSSN(input string) (matches []match) {
 		}
 		if !isNumeric(character) {
 			if isSSN(length) {
-				matches = this.appendMatches(matches, start, length)
+				this.appendMatch(start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -270,7 +270,7 @@ func (this *Redaction) matchDOB(input string) (matches []match) {
 			monthStart = i + 1
 			monthLength = 0
 			if isDOB(length) {
-				matches = this.appendMatches(matches, start, length)
+				this.appendMatch(start, length)
 				length = 0
 				start = i + 1
 				continue
@@ -283,7 +283,7 @@ func (this *Redaction) matchDOB(input string) (matches []match) {
 			start = i + 1
 		}
 		if length == 2 && monthCandidate {
-			matches = this.appendMatches(matches, monthStart, monthLength+length+1)
+			this.appendMatch(monthStart, monthLength+length+1)
 			monthCandidate = false
 			length = 0
 			start = 0
@@ -313,11 +313,12 @@ func isNumeric(value byte) bool {
 func breakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')' && character != '/'
 }
-func (this *Redaction) appendMatches(matches []match, start, length int) []match {
+func (this *Redaction) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
 		this.used[i] = struct{}{}
 	}
-	return append(matches, match{InputIndex: start, Length: length})
+
+	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
 
 type match struct {

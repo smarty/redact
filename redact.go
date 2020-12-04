@@ -1,5 +1,7 @@
 package redact
 
+import "strings"
+
 type Redaction struct {
 	used    map[int]struct{}
 	matches []match
@@ -13,7 +15,8 @@ func New() *Redaction {
 }
 
 func (this *Redaction) All(input string) string {
-	this.matchCreditCard(input)
+	//this.matchCreditCard(input)
+	this.matchCC(input)
 	this.matchEmail(input)
 	this.matchPhone(input)
 	this.matchSSN(input)
@@ -56,79 +59,126 @@ func (this *Redaction) redactMatches(input string) string {
 	return string(buffer)
 }
 
-func (this *Redaction) matchCreditCard(input string) (matches []match) {
-	var start int
+func (this *Redaction) matchCC(input string){
+	var lastDigit int
 	var length int
+	var numbers int
+	var isOdd bool
 	var isCandidate bool
 	var total int
-	for i := 0; i < len(input)-1; i++ {
+	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
-		if !isNumeric(character) {
-			// TODO: inline isCreditCard and checkLuhn into method--this avoids having to create a string to ask if it's a credit card
-			// instead we track each numeric digit here and run a tally as we go along
-			if isCreditCard(length, input[start:start+length]) {
-				this.appendMatch(start, length)
+
+		if !isNumeric(input[i]) {
+			if numbers > 12 && total % 10 == 0 {
+				this.appendMatch(lastDigit-length + 1, length)
 				length = 0
-				start = i + 1
 				total = 0
+				isOdd = false // TODO
+				lastDigit = i - 1
+				numbers = 0
+				isCandidate = false
 				continue
 			}
-			if breakNotFound(character) && !isNumeric(input[i+1]) {
-				start = i + 1
+
+			if breakNotFound(character) && !isNumeric(input[i-1]) {
+				lastDigit = i - 1
 				length = 0
 				isCandidate = false
 				continue
 			}
 			length++
 		} else {
+			isOdd = !isOdd
+			numbers++
 			number := int(character - '0')
+			if !isOdd {
+				number += number
+				if number > 9 {
+					number -= 9
+				}
+			}
+			total += number
+
 			if isCandidate {
 				length++
-				total += number
+			} else {
+				isCandidate = true
+				lastDigit = i
+				numbers = 1
+			}
+		}
+	}
+}
+
+func (this *Redaction) matchCreditCard(input string){
+	var start int
+	var length int
+	var isCandidate bool
+	var card []int
+	for i := 0; i < len(input)-1; i++ {
+		character := input[i]
+		if !isNumeric(character) {
+			// TODO: inline isCreditCard and checkLuhn into method--this avoids having to create a string to ask if it's a credit card
+			// instead we track each numeric digit here and run a tally as we go along
+
+			// TODO: Iterate backwards to be able to inline luhnfun
+			if checkCard(length, card) {
+				this.appendMatch(start, length)
+				length = 0
+				start = i + 1
+				card = card[0:0]
+				continue
+			}
+			if breakNotFound(character) && !isNumeric(input[i+1]) {
+				start = i + 1
+				length = 0
+				isCandidate = false
+				card = card[0:0]
+				continue
+			}
+			length++
+		} else {
+			number := character - '0'
+			card = append(card, int(number))
+			if isCandidate {
+				length++
 			} else {
 				isCandidate = true
 				start = i
-				total = number
 			}
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
 		//length++ // TODO: test coverage
 	}
-	if isCreditCard(length, input[start:start+length]) {
+	if checkCard(length, card) {
 		// matches = appendMatches(matches, start, length) // TODO: test coverage
 	}
 
-	return matches
 }
-func isCreditCard(length int, input string) bool {
-	return length >= 13 && length <= 24 && checkLuhn(input)
-}
-func checkLuhn(input string) bool {
-	nDigits := len(input)
-	var nSum int
-	var isSecond bool
-	for i := nDigits - 2; i >= 0; i-- {
-		if !isNumeric(input[i]) {
-			continue
-		}
-		d := input[i] - '0'
-		if isSecond == false {
-			d = d * 2
-		}
-		if d > 9 {
-			d -= 9
-		}
-		digit := int(d)
-		nSum += digit
-		isSecond = !isSecond
-	}
-	temp := int(input[nDigits-1] - '0')
-	mod := nSum % 10
-	return mod == temp
+func checkCard(length int, card []int) bool {
+	return length >= 13 && length <= 24 && luhnCheck(card)
 }
 
-func (this *Redaction) matchEmail(input string) (matches []match) {
+func luhnCheck(card []int) bool {
+	var total int
+	var isOdd bool
+	for i := len(card) - 1; i >= 0; i-- {
+		isOdd = !isOdd
+		num := card[i]
+		if !isOdd {
+			num = card[i] * 2
+			if num > 9 {
+				num -= 9
+			}
+		}
+		total += num
+	}
+	return total%10 == 0
+}
+
+func (this *Redaction) matchEmail(input string) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -152,10 +202,9 @@ func (this *Redaction) matchEmail(input string) (matches []match) {
 			}
 		}
 	}
-	return matches
 }
 
-func (this *Redaction) matchPhone(input string) (matches []match) {
+func (this *Redaction) matchPhone(input string) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -170,7 +219,7 @@ func (this *Redaction) matchPhone(input string) (matches []match) {
 				length--
 				continue
 			}
-			if breakNotFound(character) {
+			if phoneBreakNotFound(character) {
 				start = i + 1
 				length = 0
 				isCandidate = false
@@ -197,13 +246,12 @@ func (this *Redaction) matchPhone(input string) (matches []match) {
 	if isPhoneNumber(length) {
 		this.appendMatch(start, length)
 	}
-	return matches
 }
 func isPhoneNumber(length int) bool {
 	return length >= 10 && length <= 14
 }
 
-func (this *Redaction) matchSSN(input string) (matches []match) {
+func (this *Redaction) matchSSN(input string) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -239,13 +287,12 @@ func (this *Redaction) matchSSN(input string) (matches []match) {
 	if isSSN(length) {
 		// matches = appendMatches(matches, start, length) // TODO: test coverage
 	}
-	return matches
 }
 func isSSN(length int) bool {
 	return length >= 9 && length <= 11
 }
 
-func (this *Redaction) matchDOB(input string) (matches []match) {
+func (this *Redaction) matchDOB(input string) {
 	var start int
 	var length int
 	var isCandidate bool
@@ -302,13 +349,16 @@ func (this *Redaction) matchDOB(input string) (matches []match) {
 	if isDOB(length) {
 		// matches = appendMatches(matches, start, length) // TODO: test coverage
 	}
-	return matches
 }
 func isDOB(length int) bool {
 	return length >= 6 && length <= 10
 }
 func isMonth(month string) bool {
-	_, found := months[month]
+	_, found := months[strings.ToLower(month)]
+	return found
+}
+func isMonth2(input string, start, length int) bool {
+	_, found := months[input[start:start+length]]
 	return found
 }
 func isNumeric(value byte) bool {
@@ -316,7 +366,10 @@ func isNumeric(value byte) bool {
 }
 
 func breakNotFound(character byte) bool {
-	return character != '-' && character != ' ' && character != '.' && character != '(' && character != ')' && character != '/'
+	return character != '-' && character != ' ' && character != '.' && character != '/'
+}
+func phoneBreakNotFound(character byte) bool {
+	return breakNotFound(character) && character != '(' && character != ')'
 }
 func (this *Redaction) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
@@ -332,28 +385,28 @@ type match struct {
 }
 
 var months = map[string]struct{}{
-	"January":   {},
-	"Jan":       {},
-	"February":  {},
-	"Feb":       {},
-	"March":     {},
-	"Mar":       {},
-	"April":     {},
-	"Apr":       {},
-	"May":       {},
-	"June":      {},
-	"Jun":       {},
-	"July":      {},
-	"Jul":       {},
-	"August":    {},
-	"Aug":       {},
-	"September": {},
-	"Sep":       {},
-	"Sept":      {},
-	"October":   {},
-	"Oct":       {},
-	"November":  {},
-	"Nov":       {},
-	"December":  {},
-	"Dec":       {},
+	"january":   {},
+	"jan":       {},
+	"february":  {},
+	"feb":       {},
+	"march":     {},
+	"mar":       {},
+	"april":     {},
+	"apr":       {},
+	"may":       {},
+	"june":      {},
+	"jun":       {},
+	"july":      {},
+	"jul":       {},
+	"august":    {},
+	"aug":       {},
+	"september": {},
+	"sep":       {},
+	"sept":      {},
+	"october":   {},
+	"oct":       {},
+	"november":  {},
+	"nov":       {},
+	"december":  {},
+	"dec":       {},
 }

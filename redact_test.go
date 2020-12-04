@@ -20,9 +20,9 @@ func (this *SanitizeFixture) Setup() {
 	this.redaction = New()
 }
 
-func (this *SanitizeFixture) TestRedactCreditCard() {
-	input := "Blah 4556-7375-8689-9855. CC number is 36551639043330 and 4556 3172 3465 5089 670 4556-7375-8689-9855 taco "
-	expected := "Blah *******************. CC number is ************** and *********************** ******************* taco "
+func (this *SanitizeFixture) FocusTestRedactCreditCard() {
+	input := "Blah 5500-0000-0000-0004. CC number is 36551639043330 and 4111 1111 1111 1101 111 4556-7375-8689-9855. taco "
+	expected := "Blah *******************. CC number is ************** and *********************** *******************. taco "
 
 	actual := this.redaction.All(input)
 
@@ -31,9 +31,11 @@ func (this *SanitizeFixture) TestRedactCreditCard() {
 
 func (this *SanitizeFixture) TestRedactEmail() {
 	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
-		"test@test. taco"
+		"test@test "
 	expected := "Blah **********.com, our employee's email is **********. and we have one more which may or not be an email " +
-		"*********. taco"
+		"********* "
+	// TODO: Test with taco
+	// TODO: No space
 
 	actual := this.redaction.All(input)
 

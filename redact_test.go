@@ -1,69 +1,92 @@
 package redact
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/smartystreets/assertions/should"
-	"github.com/smartystreets/gunit"
-)
-
-func TestSanitizeFixture(t *testing.T) {
-	gunit.Run(new(SanitizeFixture), t, gunit.Options.AllSequential())
+func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
+	actual := redaction.All(input)
+	if actual == expected {
+		return
+	}
+	t.Helper()
+	t.Errorf("\n"+
+		"Expected: %s\n"+
+		"Actual:   %s",
+		expected,
+		actual,
+	)
 }
 
-type SanitizeFixture struct {
-	*gunit.Fixture
-	redaction *Redaction
+func TestRedactCreditCard(t *testing.T) {
+	t.Parallel()
+
+	redaction := New()
+
+	assertRedaction(t, redaction,
+		"Blank 5500-0000-0000-0004.",
+		"Blank *******************.",
+	)
+	assertRedaction(t, redaction,
+		"36551639043330",
+		"**************",
+	)
+	assertRedaction(t, redaction,
+		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
+		"*********************** *******************. taco ",
+	)
 }
+func TestRedactEmail(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) Setup() {
-	this.redaction = New()
+	redaction := New()
+
+	assertRedaction(t, redaction,
+		"Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
+		"Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
+	)
 }
+func TestRedactPhone(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactCreditCard() {
-	this.testCC("Blank 5500-0000-0000-0004.", "Blank *******************.")
-	this.testCC("36551639043330", "**************")
-	this.testCC("4111 1111 1111 1101 111 4556-7375-8689-9855. taco ", "*********************** *******************. taco ")
+	redaction := New()
+
+	assertRedaction(t, redaction,
+		"Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"Blah ************ and ************ and ************** +1************* taco",
+	)
 }
-func (this *SanitizeFixture) testCC(input, expected string) {
-	this.So(this.redaction.All(input), should.Equal, expected)
+func TestRedactSSN(t *testing.T) {
+	t.Parallel()
+
+	redaction := New()
+
+	assertRedaction(t, redaction,
+		"Blah 123-12-1234.",
+		"Blah ***********.",
+	)
+	assertRedaction(t, redaction,
+		"123121234",
+		"*********",
+	)
+	assertRedaction(t, redaction,
+		"123 12 1234 taco",
+		"*********** taco",
+	)
 }
+func TestRedactDOB(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactEmail() {
-	input := "Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email " +
-		"test@test taco"
-	expected := "Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email " +
-		"****@test taco"
-
-	actual := this.redaction.All(input)
-
-	this.So(actual, should.Equal, expected)
-}
-
-func (this *SanitizeFixture) TestRedactPhoneNum() {
-	input := "Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111 taco"
-
-	expected := "Blah ************ and ************ and ************** +1************* taco"
-
-	actual := this.redaction.All(input)
-
-	this.So(actual, should.Equal, expected)
-}
-
-func (this *SanitizeFixture) TestRedactSSN() {
-	this.testSSN("Blah 123-12-1234.", "Blah ***********.")
-	this.testSSN("123121234", "*********")
-	this.testSSN("123 12 1234 taco", "*********** taco")
-}
-func (this *SanitizeFixture) testSSN(input, expected string) {
-	this.So(this.redaction.All(input), should.Equal, expected)
-}
-
-func (this *SanitizeFixture) TestRedactDOB() {
-	this.testDOB("Blah 12-01-1998 and 12/01/1998 ", "Blah ********** and ********** ")
-	this.testDOB("1 3 98", "******")
-	this.testDOB(" March 09, 1997 and 09 May 1900 taco", " ********, 1997 and 09 ******00 taco")
-}
-func (this *SanitizeFixture) testDOB(input, expected string) {
-	this.So(this.redaction.All(input), should.Equal, expected)
+	redaction := New()
+	
+	assertRedaction(t, redaction,
+		"Blah 12-01-1998 and 12/01/1998 ",
+		"Blah ********** and ********** ",
+	)
+	assertRedaction(t, redaction,
+		"1 3 98",
+		"******",
+	)
+	assertRedaction(t, redaction,
+		" March 09, 1997 and 09 May 1900 taco",
+		" ********, 1997 and 09 ******00 taco",
+	)
 }

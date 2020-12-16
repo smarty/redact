@@ -21,12 +21,12 @@ func (this *SanitizeFixture) Setup() {
 }
 
 func (this *SanitizeFixture) TestRedactCreditCard() {
-	input := "Blah 5500-0000-0000-0004. CC number is 36551639043330  and 4111 1111 1111 1101 111 4556-7375-8689-9855. taco "
-	expected := "Blah *******************. CC number is **************  and *********************** *******************. taco "
-
-	actual := this.redaction.All(input)
-
-	this.So(actual, should.Equal, expected)
+	this.testCC("Blank 5500-0000-0000-0004.", "Blank *******************.")
+	this.testCC("36551639043330", "**************")
+	this.testCC("4111 1111 1111 1101 111 4556-7375-8689-9855. taco ", "*********************** *******************. taco ")
+}
+func (this *SanitizeFixture) testCC(input, expected string) {
+	this.So(this.redaction.All(input), should.Equal, expected)
 }
 
 func (this *SanitizeFixture) TestRedactEmail() {
@@ -51,21 +51,19 @@ func (this *SanitizeFixture) TestRedactPhoneNum() {
 }
 
 func (this *SanitizeFixture) TestRedactSSN() {
-	input := "Blah 123-12-1234 and 123121234 or 123 12 1234 taco"
-
-	expected := "Blah *********** and ********* or *********** taco"
-
-	actual := this.redaction.All(input)
-
-	this.So(actual, should.Equal, expected)
+	this.testSSN("Blah 123-12-1234.", "Blah ***********.")
+	this.testSSN("123121234", "*********")
+	this.testSSN("123 12 1234 taco", "*********** taco")
+}
+func (this *SanitizeFixture) testSSN(input, expected string) {
+	this.So(this.redaction.All(input), should.Equal, expected)
 }
 
 func (this *SanitizeFixture) TestRedactDOB() {
-	input := "Blah 12-01-1998 and 12/01/1998 or 1 3 98 and March 09, 1997 and 09 May 1900 taco"
-
-	expected := "Blah ********** and ********** or ****** and ********, 1997 and 09 ******00 taco"
-
-	actual := this.redaction.All(input)
-
-	this.So(actual, should.Equal, expected)
+	this.testDOB("Blah 12-01-1998 and 12/01/1998 ", "Blah ********** and ********** ")
+	this.testDOB("1 3 98", "******")
+	this.testDOB(" March 09, 1997 and 09 May 1900 taco", " ********, 1997 and 09 ******00 taco")
+}
+func (this *SanitizeFixture) testDOB(input, expected string) {
+	this.So(this.redaction.All(input), should.Equal, expected)
 }

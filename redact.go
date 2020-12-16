@@ -1,10 +1,5 @@
 package redact
 
-import (
-	"fmt"
-	"strings"
-)
-
 type Redaction struct {
 	used    []bool
 	matches []match
@@ -18,11 +13,10 @@ func New() *Redaction {
 }
 
 func (this *Redaction) All(input string) string {
-	//this.matchCreditCard(input)
-	this.matchCC(input)
+	this.matchCreditCard(input)
 	this.matchEmail(input)
-	this.matchPhone(input)
 	this.matchSSN(input)
+	this.matchPhone(input)
 	this.matchDOB(input)
 	result := this.redactMatches(input)
 	this.clear()
@@ -33,6 +27,13 @@ func (this *Redaction) clear() {
 	for i := range this.used {
 		this.used[i] = false
 	}
+}
+func (this *Redaction) appendMatch(start, length int) {
+	for i := start; i <= start+length; i++ {
+		this.used[i] = true
+	}
+
+	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
 func (this *Redaction) redactMatches(input string) string {
 	if len(this.matches) == 0 {
@@ -49,7 +50,7 @@ func (this *Redaction) redactMatches(input string) string {
 		if lowIndex < 0 {
 			continue
 		}
-		if highIndex >= bufferLength {
+		if highIndex > bufferLength {
 			continue
 		}
 		for ; lowIndex < highIndex; lowIndex++ {
@@ -57,10 +58,11 @@ func (this *Redaction) redactMatches(input string) string {
 		}
 	}
 
-	return string(buffer)
+	output := string(buffer)
+	return output
 }
 
-func (this *Redaction) matchCC(input string) {
+func (this *Redaction) matchCreditCard(input string) {
 	var lastDigit int
 	var length int
 	var numbers int
@@ -69,8 +71,6 @@ func (this *Redaction) matchCC(input string) {
 	var total int
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
-		strChar := fmt.Sprintf("%c", character)
-		_ = strChar
 
 		if !isNumeric(input[i]) {
 			if numbers > 12 && total%10 == 0 {
@@ -83,13 +83,13 @@ func (this *Redaction) matchCC(input string) {
 				continue
 			}
 
-			if ccBreakNotFound(character) && !isNumeric(input[i-1]) {
+			if creditCardBreakNotFound(character) && !isNumeric(input[i-1]) {
 				lastDigit = i - 1
 				length = 0
 				isCandidate = false
 				continue
 			}
-			if i < len(input)-1 && !ccBreakNotFound(input[i+1]) {
+			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
 				continue
 			}
 			length++
@@ -111,9 +111,32 @@ func (this *Redaction) matchCC(input string) {
 				isCandidate = true
 				lastDigit = i
 				numbers = 1
+				if length == 0 {
+					length++
+				}
 			}
 		}
 	}
+	if isNumeric(input[0]) {
+		isOdd = !isOdd
+		numbers++
+		number := int(input[0] - '0')
+		if !isOdd {
+			number += number
+			if number > 9 {
+				number -= 9
+			}
+		}
+		total += number
+
+		length++
+	}
+	if numbers > 12 && total%10 == 0 {
+		this.appendMatch(lastDigit-length+1, length)
+	}
+}
+func creditCardBreakNotFound(character byte) bool {
+	return character != '-' && character != ' '
 }
 
 func (this *Redaction) matchEmail(input string) {
@@ -137,6 +160,9 @@ func (this *Redaction) matchEmail(input string) {
 			length++
 		}
 	}
+}
+func emailBreakNotFound(character byte) bool {
+	return character != '.' && character != ' '
 }
 
 func (this *Redaction) matchPhone(input string) {
@@ -182,6 +208,9 @@ func (this *Redaction) matchPhone(input string) {
 		this.appendMatch(start, length)
 	}
 }
+func phoneBreakNotFound(character byte) bool {
+	return character != '-' && character != ' ' && character != '(' && character != ')'
+}
 func isPhoneNumber(length int) bool {
 	return length >= 10 && length <= 14
 }
@@ -189,6 +218,7 @@ func isPhoneNumber(length int) bool {
 func (this *Redaction) matchSSN(input string) {
 	var start int
 	var length int
+	var numbers int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -196,35 +226,49 @@ func (this *Redaction) matchSSN(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if isSSN(length) {
+			if isSSN(numbers) {
 				this.appendMatch(start, length)
+				numbers = 0
 				length = 0
 				start = i + 1
+				isCandidate = false
 				continue
 			}
 			if ssnBreakNotFound(character) {
 				start = i + 1
+				numbers = 0
 				length = 0
 				isCandidate = false
 				continue
 			}
+			if isCandidate {
+				length++
+			}
+			continue
 		}
 		if isCandidate {
+			numbers++
 			length++
 		} else {
 			isCandidate = true
-			start = i + 1
+			start = i
+			numbers++
+			length++
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
-		// length++ // TODO: test coverage
+		numbers++
+		length++
 	}
-	if isSSN(length) {
-		// matches = appendMatches(matches, start, length) // TODO: test coverage
+	if isSSN(numbers) {
+		this.appendMatch(start, length)
 	}
 }
+func ssnBreakNotFound(character byte) bool {
+	return character != '-' && character != ' '
+}
 func isSSN(length int) bool {
-	return length >= 9 && length <= 11
+	return length == 9
 }
 
 func (this *Redaction) matchDOB(input string) {
@@ -234,10 +278,11 @@ func (this *Redaction) matchDOB(input string) {
 	var monthStart int
 	var monthLength int
 	var monthCandidate bool
-	//var startChar byte
+	var startChar byte
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
+
 		if this.used[i] {
 			continue
 		}
@@ -249,18 +294,12 @@ func (this *Redaction) matchDOB(input string) {
 				isCandidate = false
 				continue
 			}
-			// TODO: this is allocating another string. Don't do dat.
-			// Instead, pass in the starting index and length and find out if it's a month
-			if isMonth(input[monthStart : monthStart+monthLength]) {
+			if monthLength > 2 && isMonth(startChar, input[i-1]) {
 				monthCandidate = true
 				continue
 			}
-			//if monthCheck(startChar, character) {
-			//	monthCandidate = true
-			//	continue
-			//}
 			monthStart = i + 1
-			//startChar = input[i + 1]
+			startChar = input[i+1]
 			monthLength = 0
 			if isDOB(length) {
 				this.appendMatch(start, length)
@@ -268,12 +307,17 @@ func (this *Redaction) matchDOB(input string) {
 				start = i + 1
 				continue
 			}
+			if isCandidate {
+				length++
+			}
+			continue
 		}
 		if isCandidate || monthCandidate {
 			length++
 		} else {
 			isCandidate = true
-			start = i + 1
+			start = i
+			length++
 		}
 		if length == 2 && monthCandidate {
 			this.appendMatch(monthStart, monthLength+length+1)
@@ -285,44 +329,26 @@ func (this *Redaction) matchDOB(input string) {
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
-		// length++ // TODO: test coverage
+		length++
 	}
 	if isDOB(length) {
-		// matches = appendMatches(matches, start, length) // TODO: test coverage
+		this.appendMatch(start, length)
 	}
-}
-func isDOB(length int) bool {
-	return length >= 6 && length <= 10
-}
-func isMonth(month string) bool {
-	_, found := months[strings.ToLower(month)]
-	return found
-}
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
-}
-
-func ccBreakNotFound(character byte) bool {
-	return character != '-' && character != ' '
-}
-func emailBreakNotFound(character byte) bool {
-	return character != '.' && character != ' '
-}
-func phoneBreakNotFound(character byte) bool {
-	return character != '-' && character != ' ' && character != '(' && character != ')'
-}
-func ssnBreakNotFound(character byte) bool {
-	return character != '-' && character != ' '
 }
 func dobBreakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '/'
 }
-func (this *Redaction) appendMatch(start, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
+func isDOB(length int) bool {
+	return length >= 6 && length <= 10
+}
+func isMonth(first, last byte) bool {
+	_, foundFirst := firstChars[first]
+	_, foundLast := lastChars[last]
+	return foundFirst && foundLast
+}
 
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
 }
 
 type match struct {
@@ -330,29 +356,38 @@ type match struct {
 	Length     int
 }
 
-var months = map[string]struct{}{
-	"january":   {},
-	"jan":       {},
-	"february":  {},
-	"feb":       {},
-	"march":     {},
-	"mar":       {},
-	"april":     {},
-	"apr":       {},
-	"may":       {},
-	"june":      {},
-	"jun":       {},
-	"july":      {},
-	"jul":       {},
-	"august":    {},
-	"aug":       {},
-	"september": {},
-	"sep":       {},
-	"sept":      {},
-	"october":   {},
-	"oct":       {},
-	"november":  {},
-	"nov":       {},
-	"december":  {},
-	"dec":       {},
-}
+var (
+	firstChars = map[byte]struct{}{
+		'j': {},
+		'f': {},
+		'm': {},
+		'a': {},
+		's': {},
+		'o': {},
+		'n': {},
+		'd': {},
+		'J': {},
+		'F': {},
+		'M': {},
+		'A': {},
+		'S': {},
+		'O': {},
+		'N': {},
+		'D': {},
+	}
+
+	lastChars = map[byte]struct{}{
+		'b': {},
+		'h': {},
+		'e': {},
+		'n': {},
+		'y': {},
+		'l': {},
+		'g': {},
+		'p': {},
+		't': {},
+		'v': {},
+		'r': {},
+		'c': {},
+	}
+)

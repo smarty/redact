@@ -165,6 +165,7 @@ func emailBreakNotFound(character byte) bool {
 }
 
 func (this *Redaction) matchPhone(input string) {
+	//TODO: Fix so that it checks numbers not just length
 	var start int
 	var length int
 	var isCandidate bool
@@ -278,10 +279,11 @@ func (this *Redaction) matchDOB(input string) {
 	var monthLength int
 	var monthCandidate bool
 	var startChar byte
+	var numbers int
+	var numBreaks int
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-
 		if this.used[i] {
 			continue
 		}
@@ -290,6 +292,8 @@ func (this *Redaction) matchDOB(input string) {
 				monthLength++
 				start = i + 1
 				length = 0
+				numbers = 0
+				numBreaks = 0
 				isCandidate = false
 				continue
 			}
@@ -300,45 +304,62 @@ func (this *Redaction) matchDOB(input string) {
 			monthStart = i + 1
 			startChar = input[i+1]
 			monthLength = 0
-			if isDOB(length) {
+			if isDOB(numbers, numBreaks) {
 				this.appendMatch(start, length)
 				length = 0
+				numbers = 0
+				numBreaks = 0
 				start = i + 1
+				isCandidate = false
 				continue
 			}
 			if isCandidate {
 				length++
 			}
+			numBreaks++
 			continue
 		}
+		numbers++
 		if isCandidate || monthCandidate {
 			length++
 		} else {
 			isCandidate = true
 			start = i
+			numBreaks = 0
 			length++
 		}
 		if length == 2 && monthCandidate {
 			this.appendMatch(monthStart, monthLength+length+1)
 			monthCandidate = false
 			length = 0
+			numBreaks = 0
 			start = 0
+			numbers = 0
 			monthStart = 0
 			monthLength = 0
+			isCandidate = false
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
 		length++
+		numbers++
 	}
-	if isDOB(length) {
+	if isDOB(numbers, numBreaks) {
 		this.appendMatch(start, length)
+		numbers = 0
+		numBreaks = 0
+		isCandidate = false
+	}
+	if numbers > 8 {
+		numbers = 0
+		numBreaks = 0
 	}
 }
 func dobBreakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '/'
 }
-func isDOB(length int) bool {
-	return length >= 6 && length <= 10
+func isDOB(numbers, numBreaks int) bool {
+	return numBreaks == 2 && numbers >= 4 && numbers <= 8
 }
 func isMonth(first, last byte) bool {
 	_, foundFirst := firstChars[first]

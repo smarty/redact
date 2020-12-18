@@ -128,7 +128,6 @@ func (this *Redaction) matchCreditCard(input string) {
 			}
 		}
 		total += number
-
 		length++
 	}
 	if numbers > 12 && total%10 == 0 {

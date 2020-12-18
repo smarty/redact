@@ -1,186 +1,392 @@
 package redact
 
-import (
-	"fmt"
-	"regexp"
-	"strconv"
-	"strings"
-)
-
-func All(input string) string {
-	input = Email(input)
-	input = DateOfBirth(input)
-	input = Phone(input)
-	input = SSN(input)
-	input = CreditCard(input)
-	return input
+type Redaction struct {
+	used    []bool
+	matches []match
 }
 
-func DateOfBirth(input string) string {
-	found := findDOB(input)
-	for _, item := range found {
-		input = strings.ReplaceAll(input, item, "[DOB REDACTED]")
+func New() *Redaction {
+	return &Redaction{
+		used:    make([]bool, 256),
+		matches: make([]match, 0, 16),
 	}
-	return input
-}
-func findDOB(input string) (dates []string) {
-	dates = append(dates, datesWithDashes.FindAllString(input, 1000000)...)
-	dates = append(dates, datesWithSlashes.FindAllString(input, 1000000)...)
-	dates = append(dates, datesInUSFormat.FindAllString(input, 1000000)...)
-	dates = append(dates, datesInEUFormat.FindAllString(input, 1000000)...)
-
-	return dates
 }
 
-func Email(input string) string {
-	found := findEmails(input)
-	for _, item := range found {
-		// TODO: Display domain name
-		input = strings.ReplaceAll(input, item, "[EMAIL REDACTED]")
+func (this *Redaction) All(input string) string {
+	this.matchCreditCard(input)
+	this.matchEmail(input)
+	this.matchSSN(input)
+	this.matchPhone(input)
+	this.matchDOB(input)
+	result := this.redactMatches(input)
+	this.clear()
+	return result
+}
+func (this *Redaction) clear() {
+	this.matches = this.matches[0:0]
+	for i := range this.used {
+		this.used[i] = false
 	}
-	return input
 }
-func findEmails(input string) (emails []string) {
-	var temp string
-	var email bool
-	for i, character := range input {
-		if breakNotFound(character) {
-			// TODO: Avoid allocations
-			temp = fmt.Sprintf("%s%c", temp, character)
-		} else {
-			if email {
-				emails = append(emails, buildEmail(input, temp, i))
-				email = false
-			}
-			temp = ""
+func (this *Redaction) appendMatch(start, length int) {
+	for i := start; i <= start+length; i++ {
+		this.used[i] = true
+	}
+
+	this.matches = append(this.matches, match{InputIndex: start, Length: length})
+}
+func (this *Redaction) redactMatches(input string) string {
+	if len(this.matches) == 0 {
+		return input // no changes to redact
+	}
+
+	buffer := []byte(input)
+	bufferLength := len(buffer)
+	var lowIndex, highIndex int
+
+	for _, match := range this.matches {
+		lowIndex = match.InputIndex
+		highIndex = lowIndex + match.Length
+		if lowIndex < 0 {
 			continue
 		}
-		if character == '@' {
-			email = true
+		if highIndex > bufferLength {
+			continue
+		}
+		for ; lowIndex < highIndex; lowIndex++ {
+			buffer[lowIndex] = '*'
 		}
 	}
-	return emails
-}
-func buildEmail(input, temp string, i int) string {
-	// TODO: .co.uk (TLDs)
-	return fmt.Sprintf("%s%c%c%c%c", temp, input[i], input[i+1], input[i+2], input[i+3])
+
+	output := string(buffer)
+	return output
 }
 
-func CreditCard(input string) string {
-	cards := findCreditCards(input)
-	return sanitizeCreditCard(cards, input)
-}
-func findCreditCards(input string) (cards []string) { // TODO: LUHN check
-	var temp string
-	for i, character := range input {
-		if breakNotFound(character) {
-			temp = fmt.Sprintf("%s%c", temp, character)
+func (this *Redaction) matchCreditCard(input string) {
+	var lastDigit int
+	var length int
+	var numbers int
+	var isOdd bool
+	var isCandidate bool
+	var total int
+	for i := len(input) - 1; i > 0; i-- {
+		character := input[i]
+
+		if !isNumeric(input[i]) {
+			if numbers > 12 && total%10 == 0 {
+				this.appendMatch(lastDigit-length+1, length)
+				length = 0
+				total = 0
+				isOdd = false
+				lastDigit = i - 1
+				numbers = 0
+				continue
+			}
+
+			if creditCardBreakNotFound(character) && !isNumeric(input[i-1]) {
+				lastDigit = i - 1
+				length = 0
+				isCandidate = false
+				continue
+			}
+			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
+				continue
+			}
+			length++
 		} else {
-			if spaceDelimitedCandidate(input, i) {
-				temp += " "
+			isOdd = !isOdd
+			numbers++
+			number := int(character - '0')
+			if !isOdd {
+				number += number
+				if number > 9 {
+					number -= 9
+				}
+			}
+			total += number
+
+			if isCandidate {
+				length++
 			} else {
-				appendCandidate(temp, &cards, 13, 19)
-				temp = ""
+				isCandidate = true
+				lastDigit = i
+				numbers = 1
+				if length == 0 {
+					length++
+				}
 			}
 		}
 	}
-	return cards
-}
-func sanitizeCreditCard(cards []string, input string) string {
-	for _, card := range cards {
-		new := strings.ReplaceAll(card, "-", "")
-		new = strings.ReplaceAll(new, " ", "")
-		// TODO: add an if statement for length check & change to only output the last 4 not 12-on
-		// TODO: must pass LUHN/MOD10 algorithm
-		new = fmt.Sprintf("[CARD %s****%s]", new[:4], new[len(new)-4:])
-		input = strings.ReplaceAll(input, card, new)
-	}
-	return input
-}
-
-func SSN(input string) string {
-	found := findSSN(input)
-	for _, item := range found {
-		input = strings.ReplaceAll(input, item, "[SSN REDACTED]")
-	}
-	return input
-}
-func findSSN(input string) (SSNs []string) {
-	var temp string
-	for i, character := range input {
-		if breakNotFound(character) {
-			temp = fmt.Sprintf("%s%c", temp, character)
-		} else {
-			if spaceDelimitedCandidate(input, i) {
-				temp += " "
-			} else {
-				appendCandidate(temp, &SSNs, 9, 11)
-				temp = ""
+	if isNumeric(input[0]) {
+		isOdd = !isOdd
+		numbers++
+		number := int(input[0] - '0')
+		if !isOdd {
+			number += number
+			if number > 9 {
+				number -= 9
 			}
 		}
+		total += number
+		length++
 	}
-	return SSNs
+	if numbers > 12 && total%10 == 0 {
+		this.appendMatch(lastDigit-length+1, length)
+	}
+}
+func creditCardBreakNotFound(character byte) bool {
+	return character != '-' && character != ' '
 }
 
-func Phone(input string) string {
-	found := findPhone(input)
-	for _, item := range found {
-		input = strings.ReplaceAll(input, item, "[PHONE REDACTED]")
-	}
-	return input
-}
-func findPhone(input string) (telNums []string) {
-	var temp string
-	for i, character := range input {
-		if breakNotFound(character) {
-			temp = fmt.Sprintf("%s%c", temp, character)
+func (this *Redaction) matchEmail(input string) {
+	var start int
+	var length int
+	for i := 0; i < len(input); i++ {
+		character := input[i]
+		if this.used[i] {
+			continue
+		}
+		if !emailBreakNotFound(character) {
+			start = i + 1
+			length = 0
+			continue
 		} else {
-			if spaceDelimitedCandidate(input, i) {
-				temp += " "
-			} else {
-				appendTelCandidate(temp, &telNums, 10, 16)
-				temp = ""
+			if character == '@' {
+				this.appendMatch(start, length)
+				start = i + 1
+				length = 0
+			}
+			length++
+		}
+	}
+}
+func emailBreakNotFound(character byte) bool {
+	return character != '.' && character != ' '
+}
+
+func (this *Redaction) matchPhone(input string) {
+	var start int
+	var length int
+	var isCandidate bool
+	for i := 0; i < len(input)-1; i++ {
+		if this.used[i] {
+			continue
+		}
+		character := input[i]
+		if !isNumeric(character) {
+			if character == '+' {
+				start = i + 2
+				length--
+				continue
+			}
+			if phoneBreakNotFound(character) {
+				start = i + 1
+				length = 0
+				isCandidate = false
+				continue
+			}
+			if isPhoneNumber(length) {
+				this.appendMatch(start, length)
+				length = 0
+				start = i + 1
+				continue
 			}
 		}
-	}
-	return telNums
-}
-
-func breakNotFound(character int32) bool {
-	return character != ' ' && character != '.' && character != ',' && character != '<'
-}
-func appendCandidate(temp string, items *[]string, min, max int) {
-	lengthTemp := len(temp)
-	if lengthTemp >= min && lengthTemp <= max {
-		new := strings.ReplaceAll(temp, "-", "")
-		new = strings.ReplaceAll(new, " ", "")
-		new = strings.ReplaceAll(new, "(", "")
-		new = strings.ReplaceAll(new, ")", "")
-		if _, err := strconv.Atoi(new); err == nil {
-			*items = append(*items, temp)
+		if isCandidate {
+			length++
+		} else {
+			isCandidate = true
+			start = i + 1
+			length = 0
 		}
 	}
-}
-func appendTelCandidate(temp string, items *[]string, min, max int) {
-	lengthTemp := len(temp)
-	if lengthTemp == 11 && strings.Contains(temp, "-") {
-		return
+	if isNumeric(input[len(input)-1]) {
+		length++
 	}
-	if resemblesCC(temp, lengthTemp) {
-		return
+	if isPhoneNumber(length) {
+		this.appendMatch(start, length)
 	}
-	appendCandidate(temp, items, min, max)
 }
-func resemblesCC(temp string, lengthTemp int) bool {
-	return lengthTemp > 12 && !((strings.Contains(temp, "(") || strings.Contains(temp, ")")) || strings.Contains(temp, " ") || strings.Contains(temp, "-"))
+func phoneBreakNotFound(character byte) bool {
+	return character != '-' && character != ' ' && character != '(' && character != ')'
 }
-func spaceDelimitedCandidate(input string, i int) bool {
-	return i+1 < len(input) && ('0' <= input[i+1] && input[i+1] <= '9') && ('0' <= input[i-1] && input[i-1] <= '9' || input[i-1] == ')')
+func isPhoneNumber(length int) bool {
+	return length >= 10 && length <= 14
+}
+
+func (this *Redaction) matchSSN(input string) {
+	var start int
+	var length int
+	var numbers int
+	var isCandidate bool
+	for i := 0; i < len(input)-1; i++ {
+		character := input[i]
+		if this.used[i] {
+			continue
+		}
+		if !isNumeric(character) {
+			if isSSN(numbers) {
+				this.appendMatch(start, length)
+				numbers = 0
+				length = 0
+				start = i + 1
+				isCandidate = false
+				continue
+			}
+			if ssnBreakNotFound(character) {
+				start = i + 1
+				numbers = 0
+				length = 0
+				isCandidate = false
+				continue
+			}
+			if isCandidate {
+				length++
+			}
+			continue
+		}
+		if isCandidate {
+			numbers++
+			length++
+		} else {
+			isCandidate = true
+			start = i
+			numbers++
+			length++
+		}
+	}
+	if isNumeric(input[len(input)-1]) {
+		numbers++
+		length++
+	}
+	if isSSN(numbers) {
+		this.appendMatch(start, length)
+	}
+}
+func ssnBreakNotFound(character byte) bool {
+	return character != '-' && character != ' '
+}
+func isSSN(length int) bool {
+	return length == 9
+}
+
+func (this *Redaction) matchDOB(input string) {
+	var start int
+	var length int
+	var isCandidate bool
+	var monthStart int
+	var monthLength int
+	var monthCandidate bool
+	var startChar byte
+
+	for i := 0; i < len(input)-1; i++ {
+		character := input[i]
+
+		if this.used[i] {
+			continue
+		}
+		if !isNumeric(character) {
+			if dobBreakNotFound(character) {
+				monthLength++
+				start = i + 1
+				length = 0
+				isCandidate = false
+				continue
+			}
+			if monthLength > 2 && isMonth(startChar, input[i-1]) {
+				monthCandidate = true
+				continue
+			}
+			monthStart = i + 1
+			startChar = input[i+1]
+			monthLength = 0
+			if isDOB(length) {
+				this.appendMatch(start, length)
+				length = 0
+				start = i + 1
+				continue
+			}
+			if isCandidate {
+				length++
+			}
+			continue
+		}
+		if isCandidate || monthCandidate {
+			length++
+		} else {
+			isCandidate = true
+			start = i
+			length++
+		}
+		if length == 2 && monthCandidate {
+			this.appendMatch(monthStart, monthLength+length+1)
+			monthCandidate = false
+			length = 0
+			start = 0
+			monthStart = 0
+			monthLength = 0
+		}
+	}
+	if isNumeric(input[len(input)-1]) {
+		length++
+	}
+	if isDOB(length) {
+		this.appendMatch(start, length)
+	}
+}
+func dobBreakNotFound(character byte) bool {
+	return character != '-' && character != ' ' && character != '/'
+}
+func isDOB(length int) bool {
+	return length >= 6 && length <= 10
+}
+func isMonth(first, last byte) bool {
+	_, foundFirst := firstChars[first]
+	_, foundLast := lastChars[last]
+	return foundFirst && foundLast
+}
+
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
+}
+
+type match struct {
+	InputIndex int
+	Length     int
 }
 
 var (
-	datesWithDashes  = regexp.MustCompile(`\d{1,2}-\d{1,2}-\d{4}`)
-	datesWithSlashes = regexp.MustCompile(`\d{1,2}/\d{1,2}/\d{4}`)
-	datesInUSFormat  = regexp.MustCompile(`[a-zA-Z]{3,9} \d{1,2}, \d{4}`)
-	datesInEUFormat  = regexp.MustCompile(`\d{1,2} [a-zA-Z]{3,9} \d{4}`)
+	firstChars = map[byte]struct{}{
+		'j': {},
+		'f': {},
+		'm': {},
+		'a': {},
+		's': {},
+		'o': {},
+		'n': {},
+		'd': {},
+		'J': {},
+		'F': {},
+		'M': {},
+		'A': {},
+		'S': {},
+		'O': {},
+		'N': {},
+		'D': {},
+	}
+
+	lastChars = map[byte]struct{}{
+		'b': {},
+		'h': {},
+		'e': {},
+		'n': {},
+		'y': {},
+		'l': {},
+		'g': {},
+		'p': {},
+		't': {},
+		'v': {},
+		'r': {},
+		'c': {},
+	}
 )

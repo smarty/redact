@@ -1,70 +1,92 @@
 package redact
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/smartystreets/assertions/should"
-	"github.com/smartystreets/gunit"
-)
-
-func TestSanitizeFixture(t *testing.T) {
-	gunit.Run(new(SanitizeFixture), t)
+func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
+	actual := redaction.All(input)
+	if actual == expected {
+		return
+	}
+	t.Helper()
+	t.Errorf("\n"+
+		"Expected: %s\n"+
+		"Actual:   %s",
+		expected,
+		actual,
+	)
 }
 
-type SanitizeFixture struct {
-	*gunit.Fixture
+func TestRedactCreditCard(t *testing.T) {
+	t.Parallel()
+
+	redaction := New()
+
+	assertRedaction(t, redaction,
+		"Blank 5500-0000-0000-0004.",
+		"Blank *******************.",
+	)
+	assertRedaction(t, redaction,
+		"36551639043330",
+		"**************",
+	)
+	assertRedaction(t, redaction,
+		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
+		"*********************** *******************. taco ",
+	)
 }
+func TestRedactEmail(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactDOB() {
-	input := "Hello my name is John, my date of birth is 11/1/2000 and my employee's date of birth is 01-01-2001, oh also November 1, 2000, May 23, 2019, 23 June 1989, Sept 4, 2010."
-	expectedOutput := "Hello my name is John, my date of birth is [DOB REDACTED] and my employee's date of birth is [DOB REDACTED], oh also [DOB REDACTED], [DOB REDACTED], [DOB REDACTED], [DOB REDACTED]."
+	redaction := New()
 
-	output := DateOfBirth(input)
-
-	this.So(output, should.Resemble, expectedOutput)
+	assertRedaction(t, redaction,
+		"Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
+		"Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
+	)
 }
+func TestRedactPhone(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactEmail() {
-	input := "Hello my name is John, my email address is john@test.com and my employee's email is jake@test.com and Jake Smith <jake@smith.com>."
-	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED] and my employee's email is [EMAIL REDACTED] and Jake Smith <[EMAIL REDACTED]>."
+	redaction := New()
 
-	output := Email(input)
-
-	this.So(output, should.Resemble, expectedOutput)
+	assertRedaction(t, redaction,
+		"Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"Blah ************ and ************ and ************** +1************* taco",
+	)
 }
+func TestRedactSSN(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactCreditCard() {
-	input := "Hello my name is John, my Credit card number is: 1111-1111-1111-1111. My employees CC number is 1111111111111111 and 1111 1111 1111 1111 plus 1111111111111."
-	expectedOutput := "Hello my name is John, my Credit card number is: [CARD 1111****1111]. My employees CC number is [CARD 1111****1111] and [CARD 1111****1111] plus [CARD 1111****1111]."
+	redaction := New()
 
-	output := CreditCard(input)
-
-	this.So(output, should.Resemble, expectedOutput)
+	assertRedaction(t, redaction,
+		"Blah 123-12-1234.",
+		"Blah ***********.",
+	)
+	assertRedaction(t, redaction,
+		"123121234",
+		"*********",
+	)
+	assertRedaction(t, redaction,
+		"123 12 1234 taco",
+		"*********** taco",
+	)
 }
+func TestRedactDOB(t *testing.T) {
+	t.Parallel()
 
-func (this *SanitizeFixture) TestRedactSSN() {
-	input := "Hello my name is John, my SSN is: 111-11-1111 my employees SSN is 111111111 and 111 11 1111."
-	expectedOutput := "Hello my name is John, my SSN is: [SSN REDACTED] my employees SSN is [SSN REDACTED] and [SSN REDACTED]."
-
-	output := SSN(input)
-
-	this.So(output, should.Resemble, expectedOutput)
-}
-
-func (this *SanitizeFixture) TestRedactTelephone() {
-	input := "Hello my name is John, my number is: 1(801) 111-1111 and (111)111 1111 also 1111111111 one more 1-801-111-1111."
-	expectedOutput := "Hello my name is John, my number is: [PHONE REDACTED] and [PHONE REDACTED] also [PHONE REDACTED] one more [PHONE REDACTED]."
-
-	output := Phone(input)
-
-	this.So(output, should.Resemble, expectedOutput)
-}
-
-func (this *SanitizeFixture) TestRedactAll() {
-	input := "Hello my name is John, my email address is john@test.com. My phone-number is 1-111-111-1111, my birthday is 1/11/1111, and my CC is 1111111111111."
-	expectedOutput := "Hello my name is John, my email address is [EMAIL REDACTED]. My phone-number is [PHONE REDACTED], my birthday is [DOB REDACTED], and my CC is [CARD 1111****1111]."
-
-	output := All(input)
-
-	this.So(output, should.Resemble, expectedOutput)
+	redaction := New()
+	
+	assertRedaction(t, redaction,
+		"Blah 12-01-1998 and 12/01/1998 ",
+		"Blah ********** and ********** ",
+	)
+	assertRedaction(t, redaction,
+		"1 3 98",
+		"******",
+	)
+	assertRedaction(t, redaction,
+		" March 09, 1997 and 09 May 1900 taco",
+		" ********, 1997 and 09 ******00 taco",
+	)
 }

@@ -165,6 +165,7 @@ func emailBreakNotFound(character byte) bool {
 }
 
 func (this *Redaction) matchPhone(input string) {
+	//TODO: Fix so that it checks numbers not just length
 	var start int
 	var length int
 	var isCandidate bool
@@ -292,10 +293,10 @@ func (this *Redaction) matchDOB(input string) {
 				start = i + 1
 				length = 0
 				numbers = 0
+				numBreaks = 0
 				isCandidate = false
 				continue
 			}
-			numBreaks++
 			if monthLength > 2 && isMonth(startChar, input[i-1]) {
 				monthCandidate = true
 				continue
@@ -309,11 +310,13 @@ func (this *Redaction) matchDOB(input string) {
 				numbers = 0
 				numBreaks = 0
 				start = i + 1
+				isCandidate = false
 				continue
 			}
 			if isCandidate {
 				length++
 			}
+			numBreaks++
 			continue
 		}
 		numbers++
@@ -322,6 +325,7 @@ func (this *Redaction) matchDOB(input string) {
 		} else {
 			isCandidate = true
 			start = i
+			numBreaks = 0
 			length++
 		}
 		if length == 2 && monthCandidate {
@@ -333,15 +337,18 @@ func (this *Redaction) matchDOB(input string) {
 			numbers = 0
 			monthStart = 0
 			monthLength = 0
+			isCandidate = false
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
 		length++
+		numbers++
 	}
 	if isDOB(numbers, numBreaks) {
 		this.appendMatch(start, length)
 		numbers = 0
 		numBreaks = 0
+		isCandidate = false
 	}
 	if numbers > 8 {
 		numbers = 0

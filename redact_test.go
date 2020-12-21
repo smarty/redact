@@ -50,8 +50,8 @@ func TestRedactPhone(t *testing.T) {
 	redaction := New()
 
 	assertRedaction(t, redaction,
-		"Blah 801-111-1111 and 801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"Blah ************ and ************ and ************** +1************* taco",
+		"Blah 801-111-1111 and  801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"Blah ************ and  ************ and ************** +1************* taco",
 	)
 }
 func TestRedactSSN(t *testing.T) {
@@ -92,5 +92,9 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		"1234    ",
 		"1234    ",
+	)
+	assertRedaction(t, redaction,
+		"635 NEW HAVEN DR SUWANEE GA 30024      %!s(MISSING) %!s(MISSING) %!s(MISSING)",
+		"635 NEW HAVEN DR SUWANEE GA 30024      %!s(MISSING) %!s(MISSING) %!s(MISSING)",
 	)
 }

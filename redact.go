@@ -178,6 +178,7 @@ func (this *Redaction) matchPhone(input string) {
 			if character == '+' {
 				start = i + 2
 				length--
+				numbers--
 				continue
 			}
 			if phoneBreakNotFound(character) {
@@ -194,21 +195,30 @@ func (this *Redaction) matchPhone(input string) {
 				start = i + 1
 				continue
 			}
+			if character == '('{
+				start = i
+				isCandidate = true
+			}
+			if isCandidate {
+				length++
+			}
+			continue
 		}
-		numbers++
 		if isCandidate {
 			length++
+			numbers++
 		} else {
 			isCandidate = true
-			start = i + 1
-			length = 0
-			numbers = 0
+			start = i
+			length++
+			numbers++
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
 		length++
+		numbers++
 	}
-	if isPhoneNumber(length) {
+	if isPhoneNumber(numbers) {
 		this.appendMatch(start, length)
 	}
 }
@@ -216,7 +226,7 @@ func phoneBreakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '(' && character != ')'
 }
 func isPhoneNumber(length int) bool {
-	return length >= 10 && length <= 14
+	return length == 10
 }
 
 func (this *Redaction) matchSSN(input string) {

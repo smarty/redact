@@ -71,7 +71,6 @@ func (this *Redaction) matchCreditCard(input string) {
 	var total int
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
-
 		if !isNumeric(input[i]) {
 			if numbers > 12 && total%10 == 0 {
 				this.appendMatch(lastDigit-length+1, length)
@@ -233,6 +232,7 @@ func (this *Redaction) matchSSN(input string) {
 	var start int
 	var length int
 	var numbers int
+	var breaks int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -240,9 +240,10 @@ func (this *Redaction) matchSSN(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if isSSN(numbers) {
+			if isSSN(numbers, breaks) {
 				this.appendMatch(start, length)
 				numbers = 0
+				breaks = 0
 				length = 0
 				start = i + 1
 				isCandidate = false
@@ -251,9 +252,12 @@ func (this *Redaction) matchSSN(input string) {
 			if ssnBreakNotFound(character) {
 				start = i + 1
 				numbers = 0
+				breaks = 0
 				length = 0
 				isCandidate = false
 				continue
+			}else{
+				breaks++
 			}
 			if isCandidate {
 				length++
@@ -274,15 +278,15 @@ func (this *Redaction) matchSSN(input string) {
 		numbers++
 		length++
 	}
-	if isSSN(numbers) {
+	if isSSN(numbers, breaks) {
 		this.appendMatch(start, length)
 	}
 }
 func ssnBreakNotFound(character byte) bool {
 	return character != '-' && character != ' '
 }
-func isSSN(length int) bool {
-	return length == 9
+func isSSN(length, breaks int) bool {
+	return length == 9 && breaks != 1
 }
 
 func (this *Redaction) matchDOB(input string) {

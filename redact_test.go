@@ -71,6 +71,10 @@ func TestRedactSSN(t *testing.T) {
 		"123 12 1234 taco",
 		"*********** taco",
 	)
+	assertRedaction(t, redaction,
+		"123-121234 taco",
+		"123-121234 taco",
+	)
 }
 func TestRedactDOB(t *testing.T) {
 	t.Parallel()
@@ -92,9 +96,5 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		"1234    ",
 		"1234    ",
-	)
-	assertRedaction(t, redaction,
-		"635 NEW HAVEN DR SUWANEE GA 30024      %!s(MISSING) %!s(MISSING) %!s(MISSING)",
-		"635 NEW HAVEN DR SUWANEE GA 30024      %!s(MISSING) %!s(MISSING) %!s(MISSING)",
 	)
 }

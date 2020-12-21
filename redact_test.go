@@ -76,7 +76,7 @@ func TestRedactDOB(t *testing.T) {
 	t.Parallel()
 
 	redaction := New()
-	
+
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",
@@ -88,5 +88,9 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		" March 09, 1997 and 09 May 1900 taco",
 		" ********, 1997 and 09 ******00 taco",
+	)
+	assertRedaction(t, redaction,
+		"1234    ",
+		"1234    ",
 	)
 }

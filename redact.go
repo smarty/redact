@@ -165,9 +165,9 @@ func emailBreakNotFound(character byte) bool {
 }
 
 func (this *Redaction) matchPhone(input string) {
-	//TODO: Fix so that it checks numbers not just length
 	var start int
 	var length int
+	var numbers int
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		if this.used[i] {
@@ -183,22 +183,26 @@ func (this *Redaction) matchPhone(input string) {
 			if phoneBreakNotFound(character) {
 				start = i + 1
 				length = 0
+				numbers = 0
 				isCandidate = false
 				continue
 			}
-			if isPhoneNumber(length) {
+			if isPhoneNumber(numbers) {
 				this.appendMatch(start, length)
 				length = 0
+				numbers = 0
 				start = i + 1
 				continue
 			}
 		}
+		numbers++
 		if isCandidate {
 			length++
 		} else {
 			isCandidate = true
 			start = i + 1
 			length = 0
+			numbers = 0
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
@@ -288,7 +292,7 @@ func (this *Redaction) matchDOB(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if dobBreakNotFound(character) {
+			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])){
 				monthLength++
 				start = i + 1
 				length = 0
@@ -297,6 +301,7 @@ func (this *Redaction) matchDOB(input string) {
 				isCandidate = false
 				continue
 			}
+
 			if monthLength > 2 && isMonth(startChar, input[i-1]) {
 				monthCandidate = true
 				continue
@@ -355,6 +360,11 @@ func (this *Redaction) matchDOB(input string) {
 		numBreaks = 0
 	}
 }
+
+func doubleBreak(character, next byte) bool{
+	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
+}
+
 func dobBreakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '/'
 }

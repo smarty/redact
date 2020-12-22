@@ -99,8 +99,4 @@ func TestRedactDOB(t *testing.T) {
 		"1234    ",
 		"1234    ",
 	)
-	assertRedaction(t, redaction,
-		"My number is apt 111 and the street is Mayfield Way",
-		"My number is apt 111 and the street is Mayfield Way",
-	)
 }

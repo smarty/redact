@@ -7,7 +7,7 @@ type Redaction struct {
 
 func New() *Redaction {
 	return &Redaction{
-		used:    make([]bool, 256),
+		used:    make([]bool, 512),
 		matches: make([]match, 0, 16),
 	}
 }

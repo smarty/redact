@@ -256,11 +256,10 @@ func (this *Redaction) matchSSN(input string) {
 				length = 0
 				isCandidate = false
 				continue
-			}else{
-				breaks++
 			}
 			if isCandidate {
 				length++
+				breaks++
 			}
 			continue
 		}
@@ -385,10 +384,18 @@ func dobBreakNotFound(character byte) bool {
 func isDOB(numbers, numBreaks int) bool {
 	return numBreaks == 2 && numbers >= 4 && numbers <= 8
 }
+
 func isMonth(first, last byte) bool {
-	_, foundFirst := firstChars[first]
-	_, foundLast := lastChars[last]
-	return foundFirst && foundLast
+	candidates, found := months[first]
+	if !found {
+		return false
+	}
+	for _, candidate := range candidates{
+		if candidate == last{
+			return true
+		}
+	}
+	return false
 }
 
 func isNumeric(value byte) bool {
@@ -401,37 +408,22 @@ type match struct {
 }
 
 var (
-	firstChars = map[byte]struct{}{
-		'j': {},
-		'f': {},
-		'm': {},
-		'a': {},
-		's': {},
-		'o': {},
-		'n': {},
-		'd': {},
-		'J': {},
-		'F': {},
-		'M': {},
-		'A': {},
-		'S': {},
-		'O': {},
-		'N': {},
-		'D': {},
-	}
-
-	lastChars = map[byte]struct{}{
-		'b': {},
-		'h': {},
-		'e': {},
-		'n': {},
-		'y': {},
-		'l': {},
-		'g': {},
-		'p': {},
-		't': {},
-		'v': {},
-		'r': {},
-		'c': {},
+	months = map[byte] []byte{
+		'j': {'n','y','e','l'},
+		'f': {'b','y'},
+		'm': {'h','r','y'},
+		'a': {'g','t', 'l', 'r'},
+		's': {'r', 'p', 't'},
+		'o': {'t', 'r'},
+		'n': {'v', 'r'},
+		'd': {'r', 'c'},
+		'J': {'n','y','e','l'},
+		'F': {'b','y'},
+		'M': {'h','r','y'},
+		'A': {'g','t', 'l', 'r'},
+		'S': {'r', 'p', 't'},
+		'O': {'t', 'r'},
+		'N': {'v', 'r'},
+		'D': {'r', 'c'},
 	}
 )

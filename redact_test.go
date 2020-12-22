@@ -33,6 +33,7 @@ func TestRedactCreditCard(t *testing.T) {
 		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
 		"*********************** *******************. taco ",
 	)
+
 }
 func TestRedactEmail(t *testing.T) {
 	t.Parallel()
@@ -72,10 +73,11 @@ func TestRedactSSN(t *testing.T) {
 		"*********** taco",
 	)
 	assertRedaction(t, redaction,
-		"123-121234 taco",
-		"123-121234 taco",
+		" 123-121234 taco",
+		" 123-121234 taco",
 	)
 }
+
 func TestRedactDOB(t *testing.T) {
 	t.Parallel()
 
@@ -96,5 +98,9 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		"1234    ",
 		"1234    ",
+	)
+	assertRedaction(t, redaction,
+		"My number is apt 111 and the street is Mayfield Way",
+		"My number is apt 111 and the street is Mayfield Way",
 	)
 }

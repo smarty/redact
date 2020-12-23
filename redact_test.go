@@ -96,7 +96,7 @@ func TestRedactDOB(t *testing.T) {
 		" ********, 1997 and 09 ******00 taco",
 	)
 	assertRedaction(t, redaction,
-		"1234    ",
-		"1234    ",
+		"4123 30TH ST APT 6 92104-1977     ",
+		"4123 30TH ST APT 6 92104-1977     ",
 	)
 }

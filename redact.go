@@ -163,11 +163,19 @@ func emailBreakNotFound(character byte) bool {
 	return character != '.' && character != ' '
 }
 
+//Check for paren
+//Check types, if they are different then not a match. <- will skip if it is a paren
+// breaks must be greater than 1 and less than or equal to 3
 func (this *Redaction) matchPhone(input string) {
 	var start int
 	var length int
 	var numbers int
+	var parenBreak bool
+	var breakType byte
+	var matchBreaks bool
+	var breaks int
 	var isCandidate bool
+
 	for i := 0; i < len(input)-1; i++ {
 		if this.used[i] {
 			continue
@@ -188,32 +196,52 @@ func (this *Redaction) matchPhone(input string) {
 				continue
 			}
 			if isPhoneNumber(numbers) {
-				this.appendMatch(start, length)
+				if correctBreaks(breaks, parenBreak, matchBreaks) {
+					this.appendMatch(start, length)
+				}
 				length = 0
 				numbers = 0
+				breaks = 0
 				start = i + 1
+				matchBreaks = false
+				parenBreak = false
 				continue
 			}
-			if character == '('{
+			if character == '(' {
 				start = i
 				isCandidate = true
-			}
-			if character == ')'{
 				length++
+				breaks++
+				parenBreak = true
 				continue
 			}
-			if i < len(input)-1 && !isNumeric(input[i+1]){
+			if character == ')' {
+				length++
+				breaks++
+				parenBreak = true
+				continue
+			}
+			if i < len(input)-1 && !isNumeric(input[i+1]) {
 				length = 0
 				numbers = 0
 				start = i + 1
+				breaks = 0
+				parenBreak = false
 				continue
 			}
-			if isCandidate{
+			if isCandidate {
 				length++
+				if breakType == character{
+					matchBreaks = true
+				}else{
+					matchBreaks = false
+				}
+				breakType = character
 			}
+			breaks++
 			continue
 		}
-		if isCandidate{
+		if isCandidate {
 			length++
 			numbers++
 		} else {
@@ -221,6 +249,9 @@ func (this *Redaction) matchPhone(input string) {
 			start = i
 			length++
 			numbers++
+			breaks = 0
+			matchBreaks = false
+			parenBreak = false
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
@@ -228,7 +259,14 @@ func (this *Redaction) matchPhone(input string) {
 		numbers++
 	}
 	if isPhoneNumber(numbers) {
-		this.appendMatch(start, length)
+		if correctBreaks(breaks, parenBreak, matchBreaks) {
+			this.appendMatch(start, length)
+		}
+		length = 0
+		numbers = 0
+		breaks = 0
+		parenBreak = false
+		matchBreaks = false
 	}
 }
 func phoneBreakNotFound(character byte) bool {
@@ -237,12 +275,25 @@ func phoneBreakNotFound(character byte) bool {
 func isPhoneNumber(length int) bool {
 	return length == 10
 }
+func correctBreaks(breaks int, parenBreak, matchBreak bool) bool {
+	if breaks == 3 && parenBreak {
+		return true
+	}
+	if breaks == 4 && parenBreak{
+		return true
+	}
+	if breaks == 2 && matchBreak{
+		return true
+	}
+	return false
+}
 
 func (this *Redaction) matchSSN(input string) {
 	var start int
 	var length int
 	var numbers int
-	var breaks int
+	var breaks bool
+	var breakType byte = 'x'
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -250,10 +301,11 @@ func (this *Redaction) matchSSN(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if isSSN(numbers, breaks) {
+			if isSSN(numbers) && (breakType == 'x' || breaks) {
 				this.appendMatch(start, length)
 				numbers = 0
-				breaks = 0
+				breaks = false
+				breakType = 'x'
 				length = 0
 				start = i + 1
 				isCandidate = false
@@ -262,14 +314,18 @@ func (this *Redaction) matchSSN(input string) {
 			if ssnBreakNotFound(character) {
 				start = i + 1
 				numbers = 0
-				breaks = 0
+				breaks = false
+				breakType = 'x'
 				length = 0
 				isCandidate = false
 				continue
 			}
-			if isCandidate && i < len(input)-1 && isNumeric(input[i+1]){
+			if isCandidate && i < len(input)-1 && isNumeric(input[i+1]) {
 				length++
-				breaks++
+				if breakType == character {
+					breaks = true
+				}
+				breakType = character
 			}
 			continue
 		}
@@ -278,6 +334,7 @@ func (this *Redaction) matchSSN(input string) {
 			length++
 		} else {
 			isCandidate = true
+			breaks = false
 			start = i
 			numbers++
 			length++
@@ -287,15 +344,17 @@ func (this *Redaction) matchSSN(input string) {
 		numbers++
 		length++
 	}
-	if isSSN(numbers, breaks) {
+	if isSSN(numbers) && (breakType == 'x' || breaks) {
 		this.appendMatch(start, length)
+		breaks = false
+		breakType = 'x'
 	}
 }
 func ssnBreakNotFound(character byte) bool {
 	return character != '-' && character != ' '
 }
-func isSSN(length, breaks int) bool {
-	return length == 9 && (breaks == 0 || breaks == 2)
+func isSSN(length int) bool {
+	return length == 9
 }
 
 func (this *Redaction) matchDOB(input string) {
@@ -307,7 +366,8 @@ func (this *Redaction) matchDOB(input string) {
 	var monthCandidate bool
 	var startChar byte
 	var numbers int
-	var numBreaks int
+	var breaks bool
+	var breakType byte
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -315,16 +375,15 @@ func (this *Redaction) matchDOB(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])){
+			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
 				monthLength++
 				start = i + 1
 				length = 0
 				numbers = 0
-				numBreaks = 0
+				breaks = false
 				isCandidate = false
 				continue
 			}
-
 			if monthLength > 2 && isMonth(startChar, input[i-1]) {
 				monthCandidate = true
 				continue
@@ -332,11 +391,11 @@ func (this *Redaction) matchDOB(input string) {
 			monthStart = i + 1
 			startChar = input[i+1]
 			monthLength = 0
-			if isDOB(numbers, numBreaks) {
+			if isDOB(numbers) && breaks {
 				this.appendMatch(start, length)
 				length = 0
 				numbers = 0
-				numBreaks = 0
+				breaks = false
 				start = i + 1
 				isCandidate = false
 				continue
@@ -344,7 +403,12 @@ func (this *Redaction) matchDOB(input string) {
 			if isCandidate {
 				length++
 			}
-			numBreaks++
+			if character == breakType {
+				breaks = true
+			}else{
+				breaks = false
+			}
+			breakType = character
 			continue
 		}
 		numbers++
@@ -352,15 +416,16 @@ func (this *Redaction) matchDOB(input string) {
 			length++
 		} else {
 			isCandidate = true
+			breakType = 'x'
 			start = i
-			numBreaks = 0
+			breaks = false
 			length++
 		}
 		if length == 2 && monthCandidate {
 			this.appendMatch(monthStart, monthLength+length+1)
 			monthCandidate = false
 			length = 0
-			numBreaks = 0
+			breaks = false
 			start = 0
 			numbers = 0
 			monthStart = 0
@@ -372,27 +437,27 @@ func (this *Redaction) matchDOB(input string) {
 		length++
 		numbers++
 	}
-	if isDOB(numbers, numBreaks) {
+	if isDOB(numbers){
 		this.appendMatch(start, length)
 		numbers = 0
-		numBreaks = 0
+		breaks = false
 		isCandidate = false
 	}
 	if numbers > 8 {
 		numbers = 0
-		numBreaks = 0
+		breaks = false
 	}
 }
 
-func doubleBreak(character, next byte) bool{
+func doubleBreak(character, next byte) bool {
 	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
 }
 
 func dobBreakNotFound(character byte) bool {
 	return character != '-' && character != ' ' && character != '/'
 }
-func isDOB(numbers, numBreaks int) bool {
-	return numBreaks == 2 && numbers >= 4 && numbers <= 8
+func isDOB(numbers int) bool {
+	return numbers >= 4 && numbers <= 8
 }
 
 func isMonth(first, last byte) bool {
@@ -400,8 +465,8 @@ func isMonth(first, last byte) bool {
 	if !found {
 		return false
 	}
-	for _, candidate := range candidates{
-		if candidate == last{
+	for _, candidate := range candidates {
+		if candidate == last {
 			return true
 		}
 	}
@@ -418,19 +483,19 @@ type match struct {
 }
 
 var (
-	months = map[byte] []byte{
-		'j': {'n','y','e','l'},
-		'f': {'b','y'},
-		'm': {'h','r','y'},
-		'a': {'g','t', 'l', 'r'},
+	months = map[byte][]byte{
+		'j': {'n', 'y', 'e', 'l'},
+		'f': {'b', 'y'},
+		'm': {'h', 'r', 'y'},
+		'a': {'g', 't', 'l', 'r'},
 		's': {'r', 'p', 't'},
 		'o': {'t', 'r'},
 		'n': {'v', 'r'},
 		'd': {'r', 'c'},
-		'J': {'n','y','e','l'},
-		'F': {'b','y'},
-		'M': {'h','r','y'},
-		'A': {'g','t', 'l', 'r'},
+		'J': {'n', 'y', 'e', 'l'},
+		'F': {'b', 'y'},
+		'M': {'h', 'r', 'y'},
+		'A': {'g', 't', 'l', 'r'},
 		'S': {'r', 'p', 't'},
 		'O': {'t', 'r'},
 		'N': {'v', 'r'},

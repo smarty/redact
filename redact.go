@@ -11,7 +11,8 @@ func New() *Redaction {
 		matches: make([]match, 0, 16),
 	}
 }
-
+//TODO: make break checking MORE specific. Must follow exact pattern SSN, CC
+//TODO: Check for breaks in DOB
 func (this *Redaction) All(input string) string {
 	this.matchCreditCard(input)
 	this.matchEmail(input)

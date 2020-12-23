@@ -65,10 +65,6 @@ func TestRedactSSN(t *testing.T) {
 		"Blah ***********.",
 	)
 	assertRedaction(t, redaction,
-		"123121234",
-		"*********",
-	)
-	assertRedaction(t, redaction,
 		"123 12 1234 taco",
 		"*********** taco",
 	)
@@ -90,13 +86,5 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		"1 3 98",
 		"******",
-	)
-	assertRedaction(t, redaction,
-		" March 09, 1997 and 09 May 1900 taco",
-		" ********, 1997 and 09 ******00 taco",
-	)
-	assertRedaction(t, redaction,
-		"4123 30TH ST APT 6 92104-1977     ",
-		"4123 30TH ST APT 6 92104-1977     ",
 	)
 }

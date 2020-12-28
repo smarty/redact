@@ -12,6 +12,8 @@ func New() *Redaction {
 	}
 }
 
+// TODO: Catching things that look like dates but are not is and issue that may require further allocation to verify
+
 func (this *Redaction) All(input string) string {
 	this.matchCreditCard(input)
 	this.matchEmail(input)

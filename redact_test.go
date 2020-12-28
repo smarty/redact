@@ -99,4 +99,20 @@ func TestRedactDOB(t *testing.T) {
 		"1163 3 4",
 		"1163 3 4",
 	)
+	assertRedaction(t, redaction,
+		"3 STE 100 12205-1621     ",
+		"3 STE 100 12205-1621     ",
+	)
+	assertRedaction(t, redaction,
+		"40512 4618",
+		"40512 4618",
+	)
+	assertRedaction(t, redaction,
+		"10415  80932-1415",
+		"10415  80932-1415",
+	)
+	assertRedaction(t, redaction,
+		"1 2 147",
+		"1 2 147",
+	)
 }

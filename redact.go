@@ -74,9 +74,6 @@ func (this *Redaction) matchCreditCard(input string) {
 
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
-		variable := string(character)
-		//variable := fmt.Sprintf("%s", character)
-		_ = variable
 		if !isNumeric(input[i]) {
 			if numbers > 12 && total%10 == 0 && breaks {
 				this.appendMatch(lastDigit-length+1, length)
@@ -315,6 +312,7 @@ func (this *Redaction) matchSSN(input string) {
 	var length int
 	var numbers int
 	var breaks bool
+	var numBreaks int
 	var breakType byte = 'x'
 	var isCandidate bool
 	for i := 0; i < len(input)-1; i++ {
@@ -323,11 +321,12 @@ func (this *Redaction) matchSSN(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if isSSN(numbers) && breaks {
+			if isSSN(numbers) && breaks && numBreaks == 2 {
 				this.appendMatch(start, length)
 				numbers = 0
 				breaks = false
 				breakType = 'x'
+				numBreaks = 0
 				length = 0
 				start = i + 1
 				isCandidate = false
@@ -338,6 +337,7 @@ func (this *Redaction) matchSSN(input string) {
 				numbers = 0
 				breaks = false
 				breakType = 'x'
+				numBreaks = 0
 				length = 0
 				isCandidate = false
 				continue
@@ -351,6 +351,7 @@ func (this *Redaction) matchSSN(input string) {
 					breakType = character
 				}
 			}
+			numBreaks++
 			continue
 		}
 		if isCandidate {
@@ -370,8 +371,6 @@ func (this *Redaction) matchSSN(input string) {
 	}
 	if isSSN(numbers) && breaks {
 		this.appendMatch(start, length)
-		breaks = false
-		breakType = 'x'
 	}
 }
 func ssnBreakNotFound(character byte) bool {
@@ -394,15 +393,29 @@ func (this *Redaction) matchDOB(input string) {
 	var breaks bool
 	var breakType byte
 	var groupLength int
-	var inRange bool
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
+
+		variable := string(character)
+		//variable := fmt.Sprintf("%s", character)
+		_ = variable
 		if this.used[i] {
 			continue
 		}
 		if !isNumeric(character) {
-			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) && inRange {
+			if isDOB(numbers) && breaks && input[i] != '-' && (groupLength == 2 || groupLength == 4) {
+				this.appendMatch(start, length)
+				breakType = 'x'
+				length = 0
+				numbers = 0
+				breaks = false
+				start = i + 1
+				isCandidate = false
+				groupLength = 0
+				continue
+			}
+			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
 				monthLength++
 				start = i + 1
 				length = 0
@@ -419,17 +432,7 @@ func (this *Redaction) matchDOB(input string) {
 			monthStart = i + 1
 			startChar = input[i+1]
 			monthLength = 0
-			if isDOB(numbers) && breaks && input[i] != '-' && (groupLength == 2 || groupLength == 4) {
-				this.appendMatch(start, length)
-				breakType = 'x'
-				length = 0
-				numbers = 0
-				breaks = false
-				start = i + 1
-				isCandidate = false
-				groupLength = 0
-				continue
-			}
+
 			if isCandidate {
 				length++
 			}
@@ -493,7 +496,7 @@ func doubleBreak(character, next byte) bool {
 }
 
 func dobBreakNotFound(character byte) bool {
-	return character != '-' && character != ' ' && character != '/'
+	return character != '-' && character != '/'
 }
 func isDOB(numbers int) bool {
 	return numbers >= 4 && numbers <= 8

@@ -79,20 +79,24 @@ func TestRedactDOB(t *testing.T) {
 
 	redaction := New()
 
-	//assertRedaction(t, redaction,
-	//	"Blah 12-01-1998 and 12/01/1998 ",
-	//	"Blah ********** and ********** ",
-	//)
-	//assertRedaction(t, redaction,
-	//	"1 3 98",
-	//	"******",
-	//)
 	assertRedaction(t, redaction,
-		"P.O. BOX 576 117 INDIAN HOLLOW ROAD    Chesterfield #<STATE 0X00007FEE7A373488>",
-		"P.O. BOX 576 117 INDIAN HOLLOW ROAD    Chesterfield #<STATE 0X00007FEE7A373488>",
+		"Blah 12-01-1998 and 12/01/1998 ",
+		"Blah ********** and ********** ",
 	)
 	assertRedaction(t, redaction,
-		"[450 900 100    SALT LAKE CITY UT]",
-		"[450 900 100    SALT LAKE CITY UT]",
+		"1 3 98",
+		"******",
+	)
+	assertRedaction(t, redaction,
+		"A373488",
+		"A373488",
+	)
+	assertRedaction(t, redaction,
+		"450 900 100",
+		"450 900 100",
+	)
+	assertRedaction(t, redaction,
+		"1163 3 4",
+		"1163 3 4",
 	)
 }

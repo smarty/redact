@@ -64,6 +64,10 @@ func (this *Redaction) redactMatches(input string) string {
 	return output
 }
 
+func isValidNetwork (character byte) bool{
+	return character >= '3' && character <= '6'
+}
+
 func (this *Redaction) matchCreditCard(input string) {
 	var lastDigit int
 	var length int
@@ -72,13 +76,16 @@ func (this *Redaction) matchCreditCard(input string) {
 	var isCandidate bool
 	var total int
 	var breaks bool
+	var numBreaks int
 	var breakType byte = 'x'
 
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {
-			if numbers > 12 && total%10 == 0 && breaks {
-				this.appendMatch(lastDigit-length+1, length)
+			if numbers > 12 && total%10 == 0 && breaks && isValidNetwork(input[i+1]){
+				if numBreaks == 0 || numBreaks == 3 || numBreaks == 4 {
+					this.appendMatch(lastDigit-length+1, length)
+				}
 				breaks = false
 				breakType = 'x'
 				length = 0
@@ -86,6 +93,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				isOdd = false
 				lastDigit = i - 1
 				numbers = 0
+				numBreaks = 0
 				continue
 			}
 			if creditCardBreakNotFound(character) || !isNumeric(input[i-1]) {
@@ -96,6 +104,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				isCandidate = false
 				breaks = false
 				breakType = 'x'
+				numBreaks = 0
 				continue
 			}
 			if isCandidate {
@@ -103,6 +112,7 @@ func (this *Redaction) matchCreditCard(input string) {
 					breaks = true
 				}
 				breakType = character
+				numBreaks++
 			}
 			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
 				continue
@@ -147,7 +157,7 @@ func (this *Redaction) matchCreditCard(input string) {
 		total += number
 		length++
 	}
-	if numbers > 12 && total%10 == 0 {
+	if numbers > 12 && total%10 == 0 && isValidNetwork(input[0]){
 		this.appendMatch(lastDigit-length+1, length)
 		breaks = false
 	}
@@ -393,6 +403,7 @@ func (this *Redaction) matchDOB(input string) {
 	var startChar byte
 	var numbers int
 	var breaks bool
+	var numBreaks int
 	var breakType byte
 	var groupLength int
 
@@ -406,9 +417,12 @@ func (this *Redaction) matchDOB(input string) {
 			continue
 		}
 		if !isNumeric(character) {
-			if isDOB(numbers) && breaks && input[i] != '-' && (groupLength == 2 || groupLength == 4) {
-				this.appendMatch(start, length)
+			if isDOB(numbers) && breaks && input[i] != '-' && numBreaks == 2{
+				if groupLength == 2 || groupLength == 4{
+					this.appendMatch(start, length)
+				}
 				breakType = 'x'
+				numBreaks = 0
 				length = 0
 				numbers = 0
 				breaks = false
@@ -416,6 +430,9 @@ func (this *Redaction) matchDOB(input string) {
 				isCandidate = false
 				groupLength = 0
 				continue
+			}
+			if numBreaks == 2{
+				breaks = false
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
 				monthLength++
@@ -425,6 +442,7 @@ func (this *Redaction) matchDOB(input string) {
 				breaks = false
 				isCandidate = false
 				groupLength = 0
+				numBreaks = 0
 				continue
 			}
 			if monthLength > 2 && isMonth(startChar, input[i-1], monthLength) {
@@ -440,9 +458,11 @@ func (this *Redaction) matchDOB(input string) {
 			}
 			if character == breakType && validGroupLength(groupLength) && numbers > 1 && numbers < 5 {
 				breaks = true
+				numBreaks++
 			}
 			if validGroupLength(groupLength) && numbers < 3 {
 				breakType = character
+				numBreaks++
 			}
 			groupLength = 0
 			continue
@@ -461,6 +481,7 @@ func (this *Redaction) matchDOB(input string) {
 		if length == 2 && monthCandidate {
 			this.appendMatch(monthStart, monthLength+length+1)
 			breakType = 'x'
+			numBreaks = 0
 			monthCandidate = false
 			length = 0
 			breaks = false
@@ -477,7 +498,7 @@ func (this *Redaction) matchDOB(input string) {
 		numbers++
 		groupLength++
 	}
-	if isDOB(numbers) && breaks && (groupLength == 2 || groupLength == 4) {
+	if isDOB(numbers) && breaks && (groupLength == 2 || groupLength == 4) && numBreaks == 2{
 		this.appendMatch(start, length)
 		numbers = 0
 		breaks = false

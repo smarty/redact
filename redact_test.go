@@ -114,25 +114,28 @@ func TestRedactDOB(t *testing.T) {
 		"LOTS 3 29 12 17 18&55",
 		"LOTS 3 29 12 17 18&55",
 	)
-	// TODO
-	//assertRedaction(t, redaction,
-	//	"[5-4-212/80 DR AMBEDKAR NAGAR NALLAGUTTA NEAR MOKSH RANIGUNJ SECUNDERABAD    hyderabad IN]",
-	//	"[5-4-212/80 DR AMBEDKAR NAGAR NALLAGUTTA NEAR MOKSH RANIGUNJ SECUNDERABAD    hyderabad IN]",
-	//)
-	//assertRedaction(t, redaction,
-	//	"[1230 MARTHA LANE LT PT 88-89-92-93     ]",
-	//	"[1230 MARTHA LANE LT PT 88-89-92-93     ]",
-	//)
-	//assertRedaction(t, redaction,
-	//	"0 0502-142-46-0000 SEQUOIA BOULEVARD    Kramer Junction ",
-	//	"0 0502-142-46-0000 SEQUOIA BOULEVARD    Kramer Junction ",
-	//)
-	//assertRedaction(t, redaction,
-	//	"[3732 N TAYLOR DR PRESCOTT VA  AZ 86314 928 848 0164  PRESCOTT VALLEY AZ]",
-	//	"[3732 N TAYLOR DR PRESCOTT VA  AZ 86314 928 848 0164  PRESCOTT VALLEY AZ]",
-	//)
-	//assertRedaction(t, redaction,
-	//	"[105 97 51 43 12 16 26 32 66 70 98 AND 1    Dover DE]",
-	//	"[105 97 51 43 12 16 26 32 66 70 98 AND 1    Dover DE]",
-	//)
+	assertRedaction(t, redaction,
+		"[5-4-212/80]",
+		"[5-4-212/80]",
+	)
+	assertRedaction(t, redaction,
+		"[1230 88-89-92-93     ]",
+		"[1230 88-89-92-93     ]",
+	)
+	assertRedaction(t, redaction,
+		"0 0502-142-46-0000",
+		"0 0502-142-46-0000",
+	)
+	assertRedaction(t, redaction,
+		"[3732 86314 928 848 0164]",
+		"[3732 86314 928 848 0164]",
+	)
+	assertRedaction(t, redaction,
+		"[105 97 51 43 12 16 26 32 66 70 98 AND 1]",
+		"[105 97 51 43 12 16 26 32 66 70 98 AND 1]",
+	)
+	assertRedaction(t, redaction,
+		"[5-6-29-1422 TOYOSU KOTO-KU    Tokyo --]",
+		"[5-6-29-1422 TOYOSU KOTO-KU    Tokyo --]",
+	)
 }

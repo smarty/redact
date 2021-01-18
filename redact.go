@@ -389,7 +389,6 @@ func isSSN(length int) bool {
 	return length == 9
 }
 
-//Breaks must be in correct place
 func (this *Redaction) matchDOB(input string) {
 	var start int
 	var length int
@@ -397,6 +396,7 @@ func (this *Redaction) matchDOB(input string) {
 	var firstByte byte
 	var isValidMonth bool
 	var numberFound bool
+	var isSpace int
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -414,18 +414,7 @@ func (this *Redaction) matchDOB(input string) {
 			if i > 1 && isMonth(firstByte, input[i-1], length){
 				isValidMonth = true
 			}
-			if !dobBreakNotFound(character) {
-				if !isValidMonth {
-					isValidFirstChar = false
-					firstByte = 'x'
-					start = i + 1
-					length = 0
-					isValidMonth = false
-					numberFound = false
-					continue
-				}
-			}
-			if !dobBreakNotFound(character) && isValidMonth && numberFound{
+			if !dobBreakNotFound(character) && isValidMonth && numberFound && (length >= 6 || length <= 13) && isSpace <= 1{
 				this.appendMatch(start, length)
 				isValidFirstChar = false
 				firstByte = 'x'
@@ -433,7 +422,21 @@ func (this *Redaction) matchDOB(input string) {
 				length = 0
 				isValidMonth = false
 				numberFound = false
+				isSpace = 0
 				continue
+			}
+			if !dobBreakNotFound(character) {
+				if !isValidMonth {
+					isValidFirstChar = false
+					isSpace = 0
+					firstByte = 'x'
+					start = i + 1
+					length = 0
+					isValidMonth = false
+					numberFound = false
+					continue
+				}
+				isSpace++
 			}
 			length++
 		} else {
@@ -486,7 +489,7 @@ var (
 		'f': {'b': []int{3}, 'y': []int{8}},
 		'm': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}},
 		'a': {'g': []int{3}, 't': []int{6}, 'l': []int{5}, 'r': []int{3}},
-		's': {'r': []int{9}, 'p': []int{3}, 't': []int{4}},
+		's': {'r': []int{9}, 'p': []int{3}},
 		'o': {'t': []int{3}, 'r': []int{7}},
 		'n': {'v': []int{3}, 'r': []int{9}},
 		'd': {'r': []int{8}, 'c': []int{3}},
@@ -494,7 +497,7 @@ var (
 		'F': {'b': []int{3}, 'y': []int{8}},
 		'M': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}},
 		'A': {'g': []int{3}, 't': []int{6}, 'l': []int{5}, 'r': []int{3}},
-		'S': {'r': []int{9}, 'p': []int{3}, 't': []int{4}},
+		'S': {'r': []int{9}, 'p': []int{3}},
 		'O': {'t': []int{3}, 'r': []int{7}},
 		'N': {'v': []int{3}, 'r': []int{9}},
 		'D': {'r': []int{8}, 'c': []int{3}},

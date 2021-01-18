@@ -397,6 +397,7 @@ func (this *Redaction) matchDOB(input string) {
 	var isValidMonth bool
 	var numberFound bool
 	var isSpace int
+	var monthLength int
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -407,16 +408,20 @@ func (this *Redaction) matchDOB(input string) {
 			if !isValidFirstChar && isValidFirstMonthCharacter(character) {
 				firstByte = character
 				isValidFirstChar = true
+				monthLength = 0
 				start = i
+				monthLength++
 				length++
 				continue
 			}
-			if i > 1 && isMonth(firstByte, input[i-1], length){
+			if i > 1 && isMonth(firstByte, input[i-1], monthLength){
+				monthLength = 0
 				isValidMonth = true
 			}
 			if !dobBreakNotFound(character) && isValidMonth && numberFound && (length >= 6 || length <= 13) && isSpace <= 1{
 				this.appendMatch(start, length)
 				isValidFirstChar = false
+				monthLength = 0
 				firstByte = 'x'
 				start = i + 1
 				length = 0
@@ -438,6 +443,7 @@ func (this *Redaction) matchDOB(input string) {
 				}
 				isSpace++
 			}
+			monthLength++
 			length++
 		} else {
 			numberFound = true

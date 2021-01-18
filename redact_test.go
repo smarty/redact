@@ -58,6 +58,10 @@ func TestRedactPhone(t *testing.T) {
 	redaction := New()
 
 	assertRedaction(t, redaction,
+		"[1401 WEST MAIN ST  Receiving Dock PO-63308-25   ]",
+		"[1401 WEST MAIN ST  Receiving Dock PO-63308-25   ]",
+	)
+	assertRedaction(t, redaction,
 		"Blah 801-111-1111 and  801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
 		"Blah ************ and  ************ and ************** +1************* taco",
 	)
@@ -142,4 +146,6 @@ func TestRedactDOB(t *testing.T) {
 		"[3732 86314 928 848 0164]",
 		"[3732 86314 928 848 0164]",
 	)
+
+	//M.S.KARTHIKREDDY . BENGALURU HI TECH TRAINING INSTITUTE 1049 4TH M BLOCK RAJAJINAGAR BANGALORE KARNATAKA INDIA    Bangalore 56001 --
 }

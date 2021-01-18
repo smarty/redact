@@ -189,9 +189,6 @@ func emailBreakNotFound(character byte) bool {
 	return character != '.' && character != ' '
 }
 
-//Check for paren
-//Check types, if they are different then not a match. <- will skip if it is a paren
-// breaks must be greater than 1 and less than or equal to 3
 func (this *Redaction) matchPhone(input string) {
 	var start int
 	var length int
@@ -395,9 +392,9 @@ func (this *Redaction) matchDOB(input string) {
 	var isValidFirstChar bool
 	var firstByte byte
 	var isValidMonth bool
-	var numberFound bool
 	var isSpace int
 	var monthLength int
+	var numLength int
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
@@ -418,7 +415,7 @@ func (this *Redaction) matchDOB(input string) {
 				monthLength = 0
 				isValidMonth = true
 			}
-			if !dobBreakNotFound(character) && isValidMonth && numberFound && (length >= 6 || length <= 13) && isSpace <= 1{
+			if !dobBreakNotFound(character) && isValidMonth && (length >= 6 || length <= 13) && isSpace <= 1 && (numLength == 1 || numLength == 2){
 				this.appendMatch(start, length)
 				isValidFirstChar = false
 				monthLength = 0
@@ -426,8 +423,8 @@ func (this *Redaction) matchDOB(input string) {
 				start = i + 1
 				length = 0
 				isValidMonth = false
-				numberFound = false
 				isSpace = 0
+				numLength = 0
 				continue
 			}
 			if !dobBreakNotFound(character) {
@@ -438,7 +435,7 @@ func (this *Redaction) matchDOB(input string) {
 					start = i + 1
 					length = 0
 					isValidMonth = false
-					numberFound = false
+					numLength = 0
 					continue
 				}
 				isSpace++
@@ -446,7 +443,7 @@ func (this *Redaction) matchDOB(input string) {
 			monthLength++
 			length++
 		} else {
-			numberFound = true
+			numLength++
 			length++
 			continue
 		}
@@ -491,14 +488,6 @@ type match struct {
 
 var (
 	months = map[byte]map[byte][]int{
-		'j': {'n': []int{3}, 'y': []int{7, 4}, 'e': []int{4}, 'l': []int{3}},
-		'f': {'b': []int{3}, 'y': []int{8}},
-		'm': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}},
-		'a': {'g': []int{3}, 't': []int{6}, 'l': []int{5}, 'r': []int{3}},
-		's': {'r': []int{9}, 'p': []int{3}},
-		'o': {'t': []int{3}, 'r': []int{7}},
-		'n': {'v': []int{3}, 'r': []int{9}},
-		'd': {'r': []int{8}, 'c': []int{3}},
 		'J': {'n': []int{3}, 'y': []int{7, 4}, 'e': []int{4}, 'l': []int{3}},
 		'F': {'b': []int{3}, 'y': []int{8}},
 		'M': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}},
@@ -509,14 +498,6 @@ var (
 		'D': {'r': []int{8}, 'c': []int{3}},
 	}
 	firstLetterOfMonth = map[byte][]int{
-		'j': {1},
-		'f': {1},
-		'm': {1},
-		'a': {1},
-		's': {1},
-		'o': {1},
-		'n': {1},
-		'd': {1},
 		'J': {1},
 		'F': {1},
 		'M': {1},

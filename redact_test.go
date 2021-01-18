@@ -95,8 +95,20 @@ func TestRedactDOB(t *testing.T) {
 	redaction := New()
 
 	assertRedaction(t, redaction,
+		"Jan 11, 2020",
+		"******, 2020",
+	)
+	assertRedaction(t, redaction,
+		"February 1, 2020",
+		"**********, 2020",
+	)
+	assertRedaction(t, redaction,
+		"This should fail may",
+		"This should fail may",
+	)
+	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",
-		"Blah ********** and ********** ",
+		"Blah 12-01-1998 and 12/01/1998 ",
 	)
 	assertRedaction(t, redaction,
 		"A373488",
@@ -134,11 +146,9 @@ func TestRedactDOB(t *testing.T) {
 		"[105 97 51 43 12 16 26 32 66 70 98 AND 1]",
 		"[105 97 51 43 12 16 26 32 66 70 98 AND 1]",
 	)
-
-	//TODO: Catch valid date, use golang time... or allocate?
 	assertRedaction(t, redaction,
-		"[WORD 1-14-10    ]",
-		"[WORD 1-14-10   ]",
+		"[MAY 1-14-10]",
+		"[MAY 1-14-10]",
 	)
 	assertRedaction(t, redaction,
 		"[38 351226 81 6275787 ]",

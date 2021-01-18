@@ -11,9 +11,6 @@ func New() *Redaction {
 		matches: make([]match, 0, 16),
 	}
 }
-
-// TODO: Catching things that look like dates but are not is and issue that may require further allocation to verify
-
 func (this *Redaction) All(input string) string {
 	this.matchCreditCard(input)
 	this.matchEmail(input)
@@ -64,7 +61,7 @@ func (this *Redaction) redactMatches(input string) string {
 	return output
 }
 
-func isValidNetwork (character byte) bool{
+func isValidNetwork(character byte) bool {
 	return character >= '3' && character <= '6'
 }
 
@@ -82,7 +79,7 @@ func (this *Redaction) matchCreditCard(input string) {
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {
-			if numbers > 12 && total%10 == 0 && breaks && isValidNetwork(input[i+1]){
+			if numbers > 12 && total%10 == 0 && breaks && isValidNetwork(input[i+1]) {
 				if numBreaks == 0 || numBreaks == 3 || numBreaks == 4 {
 					this.appendMatch(lastDigit-length+1, length)
 				}
@@ -108,7 +105,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				continue
 			}
 			if isCandidate {
-				if breakType == character && i > 0 && isNumeric(input[i -1]){
+				if breakType == character && i > 0 && isNumeric(input[i-1]) {
 					breaks = true
 				}
 				breakType = character
@@ -157,7 +154,7 @@ func (this *Redaction) matchCreditCard(input string) {
 		total += number
 		length++
 	}
-	if numbers > 12 && total%10 == 0 && isValidNetwork(input[0]){
+	if numbers > 12 && total%10 == 0 && isValidNetwork(input[0]) {
 		this.appendMatch(lastDigit-length+1, length)
 		breaks = false
 	}
@@ -396,133 +393,61 @@ func isSSN(length int) bool {
 func (this *Redaction) matchDOB(input string) {
 	var start int
 	var length int
-	var isCandidate bool
-	var monthStart int
-	var monthLength int
-	var monthCandidate bool
-	var startChar byte
-	var numbers int
-	var breaks bool
-	var numBreaks int
-	var breakType byte
-	var groupLength int
+	var isValidFirstChar bool
+	var firstByte byte
+	var isValidMonth bool
+	var numberFound bool
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-
-		variable := string(character)
-		//variable := fmt.Sprintf("%s", character)
-		_ = variable
 		if this.used[i] {
 			continue
 		}
 		if !isNumeric(character) {
-			if isDOB(numbers) && breaks && input[i] != '-' && numBreaks == 2{
-				if groupLength == 2 || groupLength == 4{
-					this.appendMatch(start, length)
+			if !isValidFirstChar && isValidFirstMonthCharacter(character) {
+				firstByte = character
+				isValidFirstChar = true
+				start = i
+			}
+			if i > 1 && isMonth(firstByte, input[i-1], length){
+				isValidMonth = true
+			}
+			if !dobBreakNotFound(character) { // January 1,
+				if !isValidMonth {
+					isValidFirstChar = false
+					firstByte = 'x'
+					start = i + 1
+					length = 0
+					isValidMonth = false
+					continue
 				}
-				breakType = 'x'
-				numBreaks = 0
-				length = 0
-				numbers = 0
-				breaks = false
-				start = i + 1
-				isCandidate = false
-				groupLength = 0
-				continue
-			}
-			if numBreaks == 2{
-				breaks = false
-			}
-			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
-				monthLength++
-				start = i + 1
-				length = 0
-				numbers = 0
-				breaks = false
-				isCandidate = false
-				groupLength = 0
-				numBreaks = 0
-				continue
-			}
-			if monthLength > 2 && isMonth(startChar, input[i-1], monthLength) {
-				monthCandidate = true
-				continue
-			}
-			monthStart = i + 1
-			startChar = input[i+1]
-			monthLength = 0
-
-			if isCandidate {
 				length++
+				continue
 			}
-			if character == breakType && validGroupLength(groupLength) && numbers > 1 && numbers < 5 {
-				breaks = true
-				numBreaks++
+			if dobBreakNotFound(character) && isValidMonth && numberFound{
+				this.appendMatch(start, length)
+				isValidFirstChar = false
+				firstByte = 'x'
+				start = i + 1
+				length = 0
+				isValidMonth = false
+				numberFound = false
+				continue
 			}
-			if validGroupLength(groupLength) && numbers < 3 {
-				breakType = character
-				numBreaks++
-			}
-			groupLength = 0
-			continue
-		}
-		numbers++
-		groupLength++
-		if isCandidate || monthCandidate {
 			length++
 		} else {
-			isCandidate = true
-			breakType = 'x'
-			start = i
-			breaks = false
+			numberFound = true
 			length++
-		}
-		if length == 2 && monthCandidate {
-			this.appendMatch(monthStart, monthLength+length+1)
-			breakType = 'x'
-			numBreaks = 0
-			monthCandidate = false
-			length = 0
-			breaks = false
-			start = 0
-			numbers = 0
-			monthStart = 0
-			monthLength = 0
-			isCandidate = false
-			groupLength = 0
+			continue
 		}
 	}
-	if isNumeric(input[len(input)-1]) {
-		length++
-		numbers++
-		groupLength++
-	}
-	if isDOB(numbers) && breaks && (groupLength == 2 || groupLength == 4) && numBreaks == 2{
-		this.appendMatch(start, length)
-		numbers = 0
-		breaks = false
-		isCandidate = false
-	}
-	if numbers > 8 {
-		numbers = 0
-		breaks = false
-	}
 }
-
-func validGroupLength(length int) bool {
-	return length == 1 || length == 4 || length == 2
-}
-
-func doubleBreak(character, next byte) bool {
-	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
-}
-
 func dobBreakNotFound(character byte) bool {
-	return character != '-' && character != '/'
+	return character != ' '
 }
-func isDOB(numbers int) bool {
-	return numbers >= 4 && numbers <= 8
+
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
 }
 
 func isMonth(first, last byte, length int) bool {
@@ -541,9 +466,12 @@ func isMonth(first, last byte, length int) bool {
 	}
 	return false
 }
-
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
+func isValidFirstMonthCharacter(first byte) bool {
+	_, found := firstLetterOfMonth[first]
+	if found {
+		return true
+	}
+	return false
 }
 
 type match struct {
@@ -569,5 +497,23 @@ var (
 		'O': {'t': []int{3}, 'r': []int{7}},
 		'N': {'v': []int{3}, 'r': []int{9}},
 		'D': {'r': []int{8}, 'c': []int{3}},
+	}
+	firstLetterOfMonth = map[byte][]int{
+		'j': {1},
+		'f': {1},
+		'm': {1},
+		'a': {1},
+		's': {1},
+		'o': {1},
+		'n': {1},
+		'd': {1},
+		'J': {1},
+		'F': {1},
+		'M': {1},
+		'A': {1},
+		'S': {1},
+		'O': {1},
+		'N': {1},
+		'D': {1},
 	}
 )

@@ -103,8 +103,8 @@ func TestRedactDOB(t *testing.T) {
 		"**********, 2020",
 	)
 	assertRedaction(t, redaction,
-		"This should fail may",
-		"This should fail may",
+		"[812 west chester padres game]",
+		"[812 west chester padres game]",
 	)
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",

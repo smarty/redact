@@ -408,23 +408,24 @@ func (this *Redaction) matchDOB(input string) {
 				firstByte = character
 				isValidFirstChar = true
 				start = i
+				length++
+				continue
 			}
 			if i > 1 && isMonth(firstByte, input[i-1], length){
 				isValidMonth = true
 			}
-			if !dobBreakNotFound(character) { // January 1,
+			if !dobBreakNotFound(character) {
 				if !isValidMonth {
 					isValidFirstChar = false
 					firstByte = 'x'
 					start = i + 1
 					length = 0
 					isValidMonth = false
+					numberFound = false
 					continue
 				}
-				length++
-				continue
 			}
-			if dobBreakNotFound(character) && isValidMonth && numberFound{
+			if !dobBreakNotFound(character) && isValidMonth && numberFound{
 				this.appendMatch(start, length)
 				isValidFirstChar = false
 				firstByte = 'x'
@@ -443,7 +444,7 @@ func (this *Redaction) matchDOB(input string) {
 	}
 }
 func dobBreakNotFound(character byte) bool {
-	return character != ' '
+	return character != ' ' && character != ','
 }
 
 func isNumeric(value byte) bool {

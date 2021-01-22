@@ -389,68 +389,168 @@ func isSSN(length int) bool {
 func (this *Redaction) matchDOB(input string) {
 	var start int
 	var length int
-	var isValidFirstChar bool
-	var firstByte byte
-	var isValidMonth bool
-	var isSpace int
+	var isCandidate bool
+	var monthStart int
 	var monthLength int
-	var numLength int
+	var monthCandidate bool
+	var startChar byte
+	var totalNumber int
+	var breaks bool
+	var numBreaks int
+	var breakType byte
+	var groupLength int
+	var groupNum int
+	var firstDateNum byte
+	var secondDateNum byte
+
+	firstDateNum = 100
+	secondDateNum = 100
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
+		variable := string(character)
+		_ = variable
 		if this.used[i] {
 			continue
 		}
 		if !isNumeric(character) {
-			if !isValidFirstChar && isValidFirstMonthCharacter(character) {
-				firstByte = character
-				isValidFirstChar = true
-				monthLength = 0
-				start = i
-				monthLength++
-				length++
+			if isDOB(totalNumber) && breaks && input[i] != '-' && numBreaks == 2 {
+				if groupLength == 2 && validGroupNum(groupNum, firstDateNum, secondDateNum) || groupLength == 4 {
+					this.appendMatch(start, length)
+				}
+				breakType = 'x'
+				numBreaks = 0
+				length = 0
+				totalNumber = 0
+				breaks = false
+				start = i + 1
+				isCandidate = false
+				groupLength = 0
+				groupNum = 0
+				firstDateNum = 100
+				secondDateNum = 100
+				groupNum = 0
 				continue
 			}
-			if i > 1 && isMonth(firstByte, input[i-1], monthLength){
-				monthLength = 0
-				isValidMonth = true
+			if numBreaks == 2 {
+				breaks = false
 			}
-			if !dobBreakNotFound(character) && isValidMonth && (length >= 6 || length <= 13) && isSpace <= 1 && (numLength == 1 || numLength == 2){
-				this.appendMatch(start, length)
-				isValidFirstChar = false
-				monthLength = 0
-				firstByte = 'x'
+			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
+				monthLength++
 				start = i + 1
 				length = 0
-				isValidMonth = false
-				isSpace = 0
-				numLength = 0
+				totalNumber = 0
+				breaks = false
+				isCandidate = false
+				groupLength = 0
+				numBreaks = 0
+				groupNum = 0
 				continue
 			}
-			if !dobBreakNotFound(character) {
-				if !isValidMonth {
-					isValidFirstChar = false
-					isSpace = 0
-					firstByte = 'x'
-					start = i + 1
-					length = 0
-					isValidMonth = false
-					numLength = 0
-					continue
-				}
-				isSpace++
+			if monthLength > 2 && isMonth(startChar, input[i-1], monthLength) {
+				monthCandidate = true
+				continue
 			}
-			monthLength++
-			length++
-		} else {
-			numLength++
-			length++
+			monthStart = i + 1
+			startChar = input[i+1]
+			monthLength = 0
+
+			if isCandidate {
+				length++
+			}
+			if validGroupNum(groupNum, firstDateNum, secondDateNum) {
+				if character == breakType && validGroupLength(groupLength) && totalNumber > 1 && totalNumber < 5 {
+					breaks = true
+					numBreaks++
+				}
+				if validGroupLength(groupLength) && totalNumber < 3 {
+					breakType = character
+					numBreaks++
+				}
+			}
+			groupLength = 0
 			continue
 		}
+		totalNumber++
+		groupLength++
+		if firstDateNum == 100 {
+			firstDateNum = character
+			groupNum++
+		} else {
+			secondDateNum = character
+		}
+		if isCandidate || monthCandidate {
+			length++
+		} else {
+			isCandidate = true
+			breakType = 'x'
+			start = i
+			breaks = false
+			length++
+		}
+		if length == 2 && monthCandidate && validGroupNum(groupNum, firstDateNum, secondDateNum) {
+			this.appendMatch(monthStart, monthLength+length+1)
+			breakType = 'x'
+			numBreaks = 0
+			monthCandidate = false
+			length = 0
+			breaks = false
+			start = 0
+			totalNumber = 0
+			monthStart = 0
+			monthLength = 0
+			isCandidate = false
+			groupLength = 0
+			firstDateNum = 100
+			secondDateNum = 100
+		}
+	}
+	if isNumeric(input[len(input)-1]) {
+		length++
+		totalNumber++
+		groupLength++
+	}
+	if isDOB(totalNumber) && breaks && (groupLength == 2 || groupLength == 4) && numBreaks == 2 {
+		this.appendMatch(start, length)
+		totalNumber = 0
+		breaks = false
+		isCandidate = false
+	}
+	if totalNumber > 8 {
+		totalNumber = 0
+		breaks = false
 	}
 }
+
+func validGroupNum(groupNum int, first, last byte) bool {
+	if groupNum == 3 {
+		return true
+	}
+	if last == 100{
+		last = '0'
+	}
+	if first == '3' && last > '1' {
+		return false
+	}
+	if first > '3' || last > '9' {
+		return false
+	}
+	return true
+}
+func validGroupLength(length int) bool {
+	return length == 1 || length == 4 || length == 2
+}
+
+func doubleBreak(character, next byte) bool {
+	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
+}
+
 func dobBreakNotFound(character byte) bool {
-	return character != ' ' && character != ','
+	return character != '/' && character != '-'
+}
+
+func isDOB(numbers int) bool {
+	return numbers >= 4 && numbers <= 8
 }
 
 func isNumeric(value byte) bool {
@@ -473,13 +573,6 @@ func isMonth(first, last byte, length int) bool {
 	}
 	return false
 }
-func isValidFirstMonthCharacter(first byte) bool {
-	_, found := firstLetterOfMonth[first]
-	if found {
-		return true
-	}
-	return false
-}
 
 type match struct {
 	InputIndex int
@@ -496,15 +589,5 @@ var (
 		'O': {'t': []int{3}, 'r': []int{7}},
 		'N': {'v': []int{3}, 'r': []int{9}},
 		'D': {'r': []int{8}, 'c': []int{3}},
-	}
-	firstLetterOfMonth = map[byte][]int{
-		'J': {1},
-		'F': {1},
-		'M': {1},
-		'A': {1},
-		'S': {1},
-		'O': {1},
-		'N': {1},
-		'D': {1},
 	}
 )

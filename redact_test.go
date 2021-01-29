@@ -110,9 +110,22 @@ func TestRedactDOB(t *testing.T) {
 		"Blah ********** and ********** ",
 	)
 	assertRedaction(t, redaction,
-		"89/90/1982",
-		"89/90/1982",
+		"29-25-15-12",
+		"29-25-15-12",
 	)
+	assertRedaction(t, redaction,
+		"12-12-12",
+		"********",
+	)
+	assertRedaction(t, redaction,
+		"30-12-12",
+		"********",
+	)
+	assertRedaction(t, redaction,
+		"30-30-12",
+		"30-30-12",
+	)
+	//TODO: Ask about this one too. Could technically be correct? m/dd/yyyy
 	assertRedaction(t, redaction,
 		"8/11/1982",
 		"8/11/1982",
@@ -122,12 +135,8 @@ func TestRedactDOB(t *testing.T) {
 		"*******",
 	)
 	assertRedaction(t, redaction,
-		"1163 3 4",
-		"1163 3 4",
-	)
-	assertRedaction(t, redaction,
-		"1 2 147",
-		"1 2 147",
+		"26-30-62",
+		"26-30-62",
 	)
 	assertRedaction(t, redaction,
 		"[5-4-212/80]",
@@ -136,9 +145,5 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		"[1230 88-89-92-93     ]",
 		"[1230 88-89-92-93     ]",
-	)
-	assertRedaction(t, redaction,
-		"0 0502-142-46-0000",
-		"0 0502-142-46-0000",
 	)
 }

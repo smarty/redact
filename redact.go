@@ -421,7 +421,7 @@ func (this *Redaction) matchDOB(input string) {
 				monthStart = i
 			}
 			if isDOB(totalNumber) && breaks && numBreaks == 2 {
-				if validGroupNum(groupNum,validDayNum, firstDateNum, secondDateNum){
+				if groupLength == 2 && validGroupNum(groupNum,validDayNum, firstDateNum, secondDateNum) || groupLength == 4{
 					this.appendMatch(start, length)
 					startChar = 'x'
 				}
@@ -446,6 +446,7 @@ func (this *Redaction) matchDOB(input string) {
 			}
 			if monthLength > 2 && isMonth(startChar, input[i-1], monthLength){
 				monthCandidate = true
+				monthLength++
 				continue
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
@@ -465,7 +466,7 @@ func (this *Redaction) matchDOB(input string) {
 					validDayNum = false
 					continue
 				}
-				if startChar != 'x'{
+				if startChar != 'x' && character != ' '{
 					monthLength++
 				}
 				start = i + 1

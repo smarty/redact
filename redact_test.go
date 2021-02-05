@@ -117,10 +117,6 @@ func TestRedactDOB(t *testing.T) {
 		" February 1, 2020",
 		" *********** 2020",
 	)
-	assertRedaction(t, redaction,
-		"17-15-13/1",
-		"17-15-13/1",
-	)
 
 	assertRedaction(t, redaction,
 		"30-12-12",

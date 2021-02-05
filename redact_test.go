@@ -93,17 +93,23 @@ func TestRedactDOB(t *testing.T) {
 
 	redaction := New()
 	assertRedaction(t, redaction,
-		"2121/11/8",
-		"2121/11/8",
+		"8/11/1982",
+		"*********",
+	)
+	assertRedaction(t, redaction,
+
+		" 7/13/2023",
+		" 7/13/2023",
+	)
+	assertRedaction(t, redaction,
+		" 3/13/2131 ",
+		" 3/13/2131 ",
 	)
 	assertRedaction(t, redaction,
 		"1982/11/8",
 		"*********",
 	)
-	assertRedaction(t, redaction,
-		"8/11/1982",
-		"*********",
-	)
+
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",

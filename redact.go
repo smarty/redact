@@ -453,6 +453,10 @@ func (this *Redaction) matchDOB(input string) {
 					monthCandidate = true
 					monthLength++
 					continue
+				} else{
+					monthCandidate = false
+					monthStart = 0
+					monthLength = 0
 				}
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
@@ -568,7 +572,8 @@ func (this *Redaction) matchDOB(input string) {
 		totalGroupLength++
 		groupLength++
 		if groupLength == 4 {
-			validYear = true
+			fourthDigit = input[len(input) - 1]
+			validYear = validYearDigit(firstDigit, secondDigit, thirdDigit, fourthDigit)
 		}
 	}
 	if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear && validMonth {
@@ -617,7 +622,10 @@ func validYearDigit(first, second, third, fourth byte) bool {
 	if first == '2' && second > '0' {
 		return false
 	}
-	if first == '2' && second != '0' && third == '2' && fourth > '1' {
+	if first == '2' && (second > '0' || third > '2'){
+		return false
+	}
+	if first == '2' && second == '0' && third == '2' && fourth > '1'{
 		return false
 	}
 	return true

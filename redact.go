@@ -394,18 +394,22 @@ func (this *Redaction) matchDOB(input string) {
 	var monthLength int
 	var monthCandidate bool
 	var startChar byte
-	var totalNumber int
+	var totalGroupLength int
 	var breaks bool
 	var numBreaks int
 	var breakType byte
 	var groupLength int
-	var groupNum int
-	var firstDateNum byte
-	var secondDateNum byte
-	var validDayNum bool
+	var firstDigit byte
+	var secondDigit byte
+	var thirdDigit byte
+	var fourthDigit byte
+	var validMonth bool
+	var validYear bool
 
-	firstDateNum = 100
-	secondDateNum = 100
+	firstDigit = 100
+	secondDigit = 100
+	thirdDigit = 100
+	fourthDigit = 100
 	startChar = 'x'
 
 	for i := 0; i < len(input)-1; i++ {
@@ -420,25 +424,25 @@ func (this *Redaction) matchDOB(input string) {
 				startChar = character
 				monthStart = i
 			}
-			if isDOB(totalNumber) && breaks && numBreaks == 2 {
-				if groupLength == 2 && validGroupNum(groupNum,validDayNum, firstDateNum, secondDateNum) || groupLength == 4{
+			if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear{
+				if groupLength == 2 && validDateDigit(firstDigit, secondDigit) && validMonth || groupLength == 4{
 					this.appendMatch(start, length)
 					startChar = 'x'
 				}
-				if firstDateNum > '1'{
-					validDayNum = true
+				if firstDigit > '1'{
+					validMonth = true
 				}
 				breakType = 'x'
 				numBreaks = 0
 				length = 0
-				totalNumber = 0
+				totalGroupLength = 0
 				breaks = false
 				start = i + 1
 				isCandidate = false
 				groupLength = 0
-				groupNum = 0
-				firstDateNum = 100
-				secondDateNum = 100
+				firstDigit = 100
+				secondDigit = 100
+				validYear = false
 				continue
 			}
 			if numBreaks == 2 {
@@ -456,14 +460,15 @@ func (this *Redaction) matchDOB(input string) {
 					length = 0
 					breaks = false
 					start = 0
-					totalNumber = 0
+					totalGroupLength = 0
 					monthStart = 0
 					monthLength = 0
 					isCandidate = false
 					groupLength = 0
-					firstDateNum = 100
-					secondDateNum = 100
-					validDayNum = false
+					firstDigit = 100
+					secondDigit = 100
+					validMonth = false
+					validYear = false
 					continue
 				}
 				if startChar != 'x' && character != ' '{
@@ -471,13 +476,12 @@ func (this *Redaction) matchDOB(input string) {
 				}
 				start = i + 1
 				length = 0
-				totalNumber = 0
+				totalGroupLength = 0
 				breaks = false
 				isCandidate = false
 				groupLength = 0
 				numBreaks = 0
-				groupNum = 0
-				validDayNum = false
+				validMonth = false
 				continue
 			}
 			monthStart = i + 1
@@ -486,34 +490,47 @@ func (this *Redaction) matchDOB(input string) {
 			if isCandidate {
 				length++
 			}
-			if validGroupNum(groupNum,validDayNum, firstDateNum, secondDateNum) {
-				if character == breakType && validGroupLength(groupLength) && totalNumber > 1 && totalNumber < 5 {
+			if firstDigit == '1' && secondDigit <= '2' && groupLength != 4{
+				validMonth = true
+			}
+			if validDateDigit(firstDigit, secondDigit) || (totalGroupLength == 4 && validYear){ // TODO: make validYear more specific 1900-2021
+				if character == breakType && validGroupLength(groupLength){
 					breaks = true
 					numBreaks++
 				}
-				if validGroupLength(groupLength) && totalNumber < 3 {
+				if validGroupLength(groupLength) && totalGroupLength < 3 || validYear && !breaks{
 					breakType = character
 					numBreaks++
 				}
-				firstDateNum = 100
-				secondDateNum = 100
+				if secondDigit == 100 && groupLength != 4{
+					validMonth = true
+				}
+				firstDigit = 100
+				secondDigit = 100
 			}
 			groupLength = 0
 			continue
 		}
-		totalNumber++
+
+		totalGroupLength++
 		groupLength++
-		if firstDateNum == 100 {
-			firstDateNum = character
-			groupNum++
-			if firstDateNum > '1' && groupNum < 2{
-				validDayNum = true
-			}
+		if firstDigit == 100 && groupLength < 3{
+			firstDigit = character
 		} else {
-			secondDateNum = character
-			if secondDateNum < '3' && groupNum < 2{
-				validDayNum = true
+			if groupLength == 2 {
+				secondDigit = character
 			}
+		}
+		if groupLength == 3{
+			thirdDigit = character
+		}
+		if groupLength == 4 {
+			fourthDigit = character
+			validYear = validYearDigit(firstDigit,secondDigit,thirdDigit,fourthDigit)
+			firstDigit = 100
+			secondDigit = 100
+			thirdDigit = 100
+			fourthDigit = 100
 		}
 		if isCandidate || monthCandidate {
 			length++
@@ -524,7 +541,7 @@ func (this *Redaction) matchDOB(input string) {
 			breaks = false
 			length++
 		}
-		if length == 2 && monthCandidate && validGroupNum(groupNum,validDayNum, firstDateNum, secondDateNum) {
+		if length == 2 && monthCandidate{
 			this.appendMatch(monthStart, monthLength+length+1)
 			breakType = 'x'
 			startChar = 'x'
@@ -533,78 +550,74 @@ func (this *Redaction) matchDOB(input string) {
 			length = 0
 			breaks = false
 			start = 0
-			totalNumber = 0
+			totalGroupLength = 0
 			monthStart = 0
 			monthLength = 0
 			isCandidate = false
 			groupLength = 0
-			firstDateNum = 100
-			secondDateNum = 100
-			validDayNum = false
+			firstDigit = 100
+			secondDigit = 100
+			validMonth = false
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
 		length++
-		totalNumber++
+		totalGroupLength++
 		groupLength++
+		if groupLength == 4{
+			validYear = true
+		}
 	}
-	if isDOB(totalNumber) && breaks && (groupLength == 2 || groupLength == 4) && numBreaks == 2 {
+	if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear && validMonth {
 		this.appendMatch(start, length)
-		totalNumber = 0
+		totalGroupLength = 0
 		breaks = false
 		isCandidate = false
-		validDayNum = false
-		firstDateNum = 100
-		secondDateNum = 100
+		validMonth = false
+		firstDigit = 100
+		secondDigit = 100
 		groupLength = 0
 		startChar = 'x'
+		validYear = false
 	}
-	if totalNumber > 8 {
-		totalNumber = 0
+	if totalGroupLength > 8 {
+		totalGroupLength = 0
 		breaks = false
 	}
 }
+func dobBreakNotFound(character byte) bool {
+	return character != '/' && character != '-'
+}
+func isDOB(numbers int) bool {
+	return numbers >= 6 && numbers <= 8
+}
 
-func validGroupNum(groupNum int, validDayGroup bool, first, last byte) bool {
-	if groupNum == 3 {
-		return true
-	}
+func validDateDigit(first, last byte) bool {
 	if last == 100{
-		last = '0'
+		return true
 	}
 	if first == '3' && last > '1' {
 		return false
 	}
-	if first > '3' {
-		return false
-	}
-	if first > '1' && validDayGroup && groupNum > 1{
-		return false
-	}
-	if last > '3' && !validDayGroup && groupNum > 1{
+	if first > '3' && last != 100{
 		return false
 	}
 	return true
 }
-
+func validYearDigit(first, second, third, fourth byte) bool{
+	if first == '1' && second != '9'{
+		return false
+	}
+	if first == '2' && second > '0'{
+		return false
+	}
+	if first == '2' && second != '0' && third == '2' && fourth > '1'{
+		return false
+	}
+	return true
+}
 func validGroupLength(length int) bool {
 	return length == 1 || length == 4 || length == 2
-}
-
-func doubleBreak(character, next byte) bool {
-	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
-}
-
-func dobBreakNotFound(character byte) bool {
-	return character != '/' && character != '-'
-}
-
-func isDOB(numbers int) bool {
-	return numbers >= 4 && numbers <= 8
-}
-
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
 }
 func isValidFirstLetter(first byte) bool{
 	_, found := validFirst[first]
@@ -625,6 +638,13 @@ func isMonth(first, last byte, length int) bool {
 		}
 	}
 	return false
+}
+
+func doubleBreak(character, next byte) bool {
+	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
+}
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
 }
 
 type match struct {

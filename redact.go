@@ -448,10 +448,15 @@ func (this *Redaction) matchDOB(input string) {
 			if numBreaks == 2 {
 				breaks = false
 			}
-			if monthLength > 2 && isMonth(startChar, input[i-1], monthLength){
+			if character == ' ' && monthLength > 2 && isMonth(startChar, input[i-1], monthLength){ // TODO:Change so its only being caught on a break.
 				monthCandidate = true
 				monthLength++
 				continue
+			}
+			if character == ' '{
+				monthStart = 0
+				monthLength = 0
+				monthCandidate = false
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
 				if character == ',' && monthCandidate{

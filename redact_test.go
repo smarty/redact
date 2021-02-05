@@ -56,11 +56,6 @@ func TestRedactPhone(t *testing.T) {
 	t.Parallel()
 
 	redaction := New()
-
-	assertRedaction(t, redaction,
-		"[1401 WEST MAIN ST  Receiving Dock PO-63308-25   ]",
-		"[1401 WEST MAIN ST  Receiving Dock PO-63308-25   ]",
-	)
 	assertRedaction(t, redaction,
 		"Blah 801-111-1111 and  801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
 		"Blah ************ and  ************ and ************** +1************* taco",
@@ -113,10 +108,7 @@ func TestRedactDOB(t *testing.T) {
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",
 	)
-	assertRedaction(t, redaction,
-		"30-12-12",
-		"30-12-12",
-	)
+
 	assertRedaction(t, redaction,
 		"Jan 1, 2021",
 		"****** 2021",
@@ -129,10 +121,7 @@ func TestRedactDOB(t *testing.T) {
 		"17-15-13/1",
 		"17-15-13/1",
 	)
-	assertRedaction(t, redaction,
-		" 12-15-13/1",
-		" 12-15-13/1",
-	)
+
 	assertRedaction(t, redaction,
 		"30-12-12",
 		"30-12-12",

@@ -457,6 +457,7 @@ func (this *Redaction) matchDOB(input string) {
 					monthCandidate = false
 					monthStart = 0
 					monthLength = 0
+					startChar = 'x'
 				}
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
@@ -500,7 +501,7 @@ func (this *Redaction) matchDOB(input string) {
 			if firstDigit == '1' && secondDigit <= '2' && groupLength != 4 {
 				validMonth = true
 			}
-			if validDateDigit(firstDigit, secondDigit) || (totalGroupLength == 4 && validYear) { // TODO: make validYear more specific 1900-2021
+			if validDateDigit(firstDigit, secondDigit) || (totalGroupLength == 4 && validYear) {
 				if character == breakType && validGroupLength(groupLength) {
 					breaks = true
 					numBreaks++

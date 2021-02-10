@@ -68,40 +68,51 @@ func isValidNetwork(character byte) bool {
 func (this *Redaction) matchCreditCard(input string) {
 	var lastDigit int
 	var length int
-	var numbers int
+	var totalNumbers int
 	var isOdd bool
 	var isCandidate bool
-	var total int
+	var totalSum int
 	var breaks bool
 	var numBreaks int
+	var lengthGroup int
+	var numGroups int
 	var breakType byte = 'x'
+ //Allowed groups: 4-4-4-4 or 4-6-5
 
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {
-			if numbers > 12 && total%10 == 0 && breaks && isValidNetwork(input[i+1]) {
-				if numBreaks == 0 || numBreaks == 3 || numBreaks == 4 {
+			if totalNumbers > 12 && totalNumbers < 19 && totalSum%10 == 0 && breaks && isValidNetwork(input[i+1]) && (numGroups == 3 || numGroups == 4 || numGroups == 0){
+				if numBreaks == 0 || numBreaks == 3 || numBreaks == 2{
 					this.appendMatch(lastDigit-length+1, length)
 				}
 				breaks = false
 				breakType = 'x'
 				length = 0
-				total = 0
+				totalSum = 0
 				isOdd = false
 				lastDigit = i - 1
-				numbers = 0
+				totalNumbers = 0
 				numBreaks = 0
+				numGroups = 0
 				continue
+			}
+			if lengthGroup > 6 || lengthGroup < 4{
+				lengthGroup = 0
+			}else{
+				numGroups++
+				lengthGroup = 0
 			}
 			if creditCardBreakNotFound(character) || !isNumeric(input[i-1]) {
 				lastDigit = i - 1
 				length = 0
-				total = 0
-				numbers = 0
+				totalSum = 0
+				totalNumbers = 0
 				isCandidate = false
 				breaks = false
 				breakType = 'x'
 				numBreaks = 0
+				numGroups = 0
 				continue
 			}
 			if isCandidate {
@@ -117,7 +128,8 @@ func (this *Redaction) matchCreditCard(input string) {
 			length++
 		} else {
 			isOdd = !isOdd
-			numbers++
+			totalNumbers++
+			lengthGroup++
 			number := int(character - '0')
 			if !isOdd {
 				number += number
@@ -125,7 +137,7 @@ func (this *Redaction) matchCreditCard(input string) {
 					number -= 9
 				}
 			}
-			total += number
+			totalSum += number
 
 			if isCandidate {
 				length++
@@ -134,7 +146,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				breakType = 'x'
 				breaks = false
 				lastDigit = i
-				numbers = 1
+				totalNumbers = 1
 				if length == 0 {
 					length++
 				}
@@ -143,7 +155,7 @@ func (this *Redaction) matchCreditCard(input string) {
 	}
 	if isNumeric(input[0]) {
 		isOdd = !isOdd
-		numbers++
+		totalNumbers++
 		number := int(input[0] - '0')
 		if !isOdd {
 			number += number
@@ -151,10 +163,10 @@ func (this *Redaction) matchCreditCard(input string) {
 				number -= 9
 			}
 		}
-		total += number
+		totalSum += number
 		length++
 	}
-	if numbers > 12 && total%10 == 0 && isValidNetwork(input[0]) {
+	if totalNumbers > 12 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups == 3 || numGroups == 4 || numGroups == 0){
 		this.appendMatch(lastDigit-length+1, length)
 		breaks = false
 	}
@@ -211,13 +223,6 @@ func (this *Redaction) matchPhone(input string) {
 				numbers--
 				continue
 			}
-			if phoneBreakNotFound(character) {
-				start = i + 1
-				length = 0
-				numbers = 0
-				isCandidate = false
-				continue
-			}
 			if isPhoneNumber(numbers) {
 				if correctBreaks(breaks, parenBreak, matchBreaks) {
 					this.appendMatch(start, length)
@@ -228,6 +233,13 @@ func (this *Redaction) matchPhone(input string) {
 				start = i + 1
 				matchBreaks = false
 				parenBreak = false
+				continue
+			}
+			if phoneBreakNotFound(character) {
+				start = i + 1
+				length = 0
+				numbers = 0
+				isCandidate = false
 				continue
 			}
 			if character == '(' {
@@ -295,7 +307,7 @@ func (this *Redaction) matchPhone(input string) {
 	}
 }
 func phoneBreakNotFound(character byte) bool {
-	return character != '-' && character != ' ' && character != '(' && character != ')'
+	return character != '-' && character != '(' && character != ')'
 }
 func isPhoneNumber(length int) bool {
 	return length == 10
@@ -414,8 +426,6 @@ func (this *Redaction) matchDOB(input string) {
 
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-		variable := string(character)
-		_ = variable
 		if this.used[i] {
 			continue
 		}
@@ -453,7 +463,7 @@ func (this *Redaction) matchDOB(input string) {
 					monthCandidate = true
 					monthLength++
 					continue
-				} else{
+				} else {
 					monthCandidate = false
 					monthStart = 0
 					monthLength = 0
@@ -461,7 +471,7 @@ func (this *Redaction) matchDOB(input string) {
 				}
 			}
 			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
-				if character == ',' && monthCandidate {
+				if character == ',' && monthCandidate && groupLength <= 2 && groupLength != 0{
 					this.appendMatch(monthStart, monthLength+length+1)
 					monthCandidate = false
 					length = 0
@@ -549,8 +559,12 @@ func (this *Redaction) matchDOB(input string) {
 			breaks = false
 			length++
 		}
-		if length == 2 && monthCandidate {
-			this.appendMatch(monthStart, monthLength+length+1)
+		if length == 2 && monthCandidate && groupLength <= 2{
+			if i < len(input)-1{
+				if input[i + 1] == ' ' || !dobBreakNotFound(input[i + 1]) || input [i + 1] == ','{ //
+					this.appendMatch(monthStart, monthLength+length+1)
+				}
+			}
 			breakType = 'x'
 			startChar = 'x'
 			numBreaks = 0
@@ -573,11 +587,11 @@ func (this *Redaction) matchDOB(input string) {
 		totalGroupLength++
 		groupLength++
 		if groupLength == 4 {
-			fourthDigit = input[len(input) - 1]
+			fourthDigit = input[len(input)-1]
 			validYear = validYearDigit(firstDigit, secondDigit, thirdDigit, fourthDigit)
 		}
 	}
-	if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear && validMonth {
+	if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear && validMonth{
 		this.appendMatch(start, length)
 		totalGroupLength = 0
 		breaks = false
@@ -623,10 +637,10 @@ func validYearDigit(first, second, third, fourth byte) bool {
 	if first == '2' && second > '0' {
 		return false
 	}
-	if first == '2' && (second > '0' || third > '2'){
+	if first == '2' && (second > '0' || third > '2') {
 		return false
 	}
-	if first == '2' && second == '0' && third == '2' && fourth > '1'{
+	if first == '2' && second == '0' && third == '2' && fourth > '1' {
 		return false
 	}
 	return true
@@ -669,14 +683,14 @@ type match struct {
 
 var (
 	months = map[byte]map[byte][]int{
-		'J': {'n': []int{3}, 'y': []int{7, 4}, 'e': []int{4}, 'l': []int{3}},
-		'F': {'b': []int{3}, 'y': []int{8}},
-		'M': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}},
-		'A': {'g': []int{3}, 't': []int{6}, 'l': []int{5}, 'r': []int{3}},
-		'S': {'r': []int{9}, 'p': []int{3}},
-		'O': {'t': []int{3}, 'r': []int{7}},
-		'N': {'v': []int{3}, 'r': []int{9}},
-		'D': {'r': []int{8}, 'c': []int{3}},
+		'J': {'n': []int{3}, 'y': []int{7, 4}, 'e': []int{4}, 'l': []int{3}, 'N': []int{3}, 'Y': []int{7, 4}, 'E': []int{4}, 'L': []int{3}},
+		'F': {'b': []int{3}, 'y': []int{8}, 'B': []int{3}, 'Y': []int{8}},
+		'M': {'h': []int{5}, 'r': []int{3}, 'y': []int{3}, 'H': []int{5}, 'R': []int{3}, 'Y': []int{3}},
+		'A': {'g': []int{3}, 't': []int{6}, 'l': []int{5}, 'r': []int{3}, 'G': []int{3}, 'T': []int{6}, 'L': []int{5}, 'R': []int{3}},
+		'S': {'r': []int{9}, 'p': []int{3}, 'R': []int{9}, 'P': []int{3}},
+		'O': {'t': []int{3}, 'r': []int{7}, 'T': []int{3}, 'R': []int{7}},
+		'N': {'v': []int{3}, 'r': []int{9}, 'V': []int{3}, 'R': []int{9}},
+		'D': {'r': []int{8}, 'c': []int{3}, 'R': []int{8}, 'C': []int{3}},
 	}
 	validFirst = map[byte][]int{
 		'J': {0},

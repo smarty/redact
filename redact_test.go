@@ -15,12 +15,14 @@ func assertRedaction(t *testing.T, redaction *Redaction, input, expected string)
 		actual,
 	)
 }
-
 func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()
 
 	redaction := New()
-
+	assertRedaction(t, redaction,
+		"Blank 5500-0000-0000-0004.",
+		"Blank *******************.",
+	)
 	assertRedaction(t, redaction,
 		"Blank 5500-0000-0000-0004.",
 		"Blank *******************.",
@@ -36,10 +38,6 @@ func TestRedactCreditCard(t *testing.T) {
 	assertRedaction(t, redaction,
 		"10415  80932-1415",
 		"10415  80932-1415",
-	)
-	assertRedaction(t, redaction,
-		"3 STE 100 12205-1621     ",
-		"3 STE 100 12205-1621     ",
 	)
 }
 func TestRedactEmail(t *testing.T) {
@@ -57,12 +55,20 @@ func TestRedactPhone(t *testing.T) {
 
 	redaction := New()
 	assertRedaction(t, redaction,
-		"Blah 801-111-1111 and  801 111 1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"Blah ************ and  ************ and ************** +1************* taco",
+		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"Blah ************ and (801) 111-1111 +1************* taco",
 	)
 	assertRedaction(t, redaction,
-		"40512 4618",
-		"40512 4618",
+		"40512-4618",
+		"40512-4618",
+	)
+	assertRedaction(t, redaction,
+		"405-124618",
+		"405-124618",
+	)
+	assertRedaction(t, redaction,
+		"This is not valid: 801 111 1111",
+		"This is not valid: 801 111 1111",
 	)
 }
 func TestRedactSSN(t *testing.T) {
@@ -87,11 +93,18 @@ func TestRedactSSN(t *testing.T) {
 		"450 900 100",
 	)
 }
-
 func TestRedactDOB(t *testing.T) {
 	t.Parallel()
 
 	redaction := New()
+	assertRedaction(t, redaction,
+		"Aug 30, 2012",
+		"******* 2012",
+	)
+	assertRedaction(t, redaction,
+		"APRIL 3, 2019",
+		"******** 2019",
+	)
 	assertRedaction(t, redaction,
 
 		" 7/13/2023",
@@ -105,7 +118,6 @@ func TestRedactDOB(t *testing.T) {
 		"1982/11/8",
 		"*********",
 	)
-
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",

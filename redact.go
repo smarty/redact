@@ -561,7 +561,7 @@ func (this *Redaction) matchDOB(input string) {
 		}
 		if length == 2 && monthCandidate && groupLength <= 2{
 			if i < len(input)-1{
-				if input[i + 1] == ' ' || !dobBreakNotFound(input[i + 1]) || input [i + 1] == ','{ //
+				if input [i + 1] == ','{ //
 					this.appendMatch(monthStart, monthLength+length+1)
 				}
 			}

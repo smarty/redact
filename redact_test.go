@@ -1,7 +1,6 @@
 package redact
 
 import "testing"
-
 func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
 	actual := redaction.All(input)
 	if actual == expected {
@@ -98,9 +97,10 @@ func TestRedactDOB(t *testing.T) {
 
 	redaction := New()
 	assertRedaction(t, redaction,
-		"Aug 30, 2012",
-		"******* 2012",
+		" Apr 39 ",
+		" Apr 39 ",
 	)
+
 	assertRedaction(t, redaction,
 		"APRIL 3, 2019",
 		"******** 2019",

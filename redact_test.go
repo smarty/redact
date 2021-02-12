@@ -1,7 +1,6 @@
 package redact
 
 import "testing"
-
 func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
 	actual := redaction.All(input)
 	if actual == expected {
@@ -19,14 +18,6 @@ func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()
 
 	redaction := New()
-	assertRedaction(t, redaction,
-		"Blank 5500-0000-0000-0004.",
-		"Blank *******************.",
-	)
-	assertRedaction(t, redaction,
-		"36551639043330",
-		"**************",
-	)
 	assertRedaction(t, redaction,
 		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
 		"*********************** *******************. taco ",

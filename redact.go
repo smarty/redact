@@ -117,9 +117,14 @@ func (this *Redaction) matchCreditCard(input string) {
 			if isCandidate {
 				if breakType == character && i > 0 && isNumeric(input[i-1]) {
 					breaks = true
+					numBreaks++
+				}else{
+					breaks = false
 				}
-				breakType = character
-				numBreaks++
+				if breakType == 'x' {
+					breakType = character
+					numBreaks++
+				}
 			}
 			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
 				continue

@@ -77,7 +77,6 @@ func (this *Redaction) matchCreditCard(input string) {
 	var lengthGroup int
 	var numGroups int
 	var breakType byte = 'x'
-	//Allowed groups: 4-4-4-4 or 4-6-5
 
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
@@ -103,7 +102,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				numGroups++
 				lengthGroup = 0
 			}
-			if creditCardBreakNotFound(character) || !isNumeric(input[i-1]) {
+			if creditCardBreakNotFound(character) && i != len(input) - 1 && !isNumeric(input[i - 1]){
 				lastDigit = i - 1
 				length = 0
 				totalSum = 0
@@ -163,11 +162,16 @@ func (this *Redaction) matchCreditCard(input string) {
 				number -= 9
 			}
 		}
+		if numBreaks > 0 {
+			numGroups++
+		}
 		totalSum += number
 		length++
 	}
-	if totalNumbers > 12 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups == 3 || numGroups == 4 || numGroups == 0) {
-		this.appendMatch(lastDigit-length+1, length)
+	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) {
+		if numBreaks == 0 || numBreaks > 1 && numBreaks < 5 {
+			this.appendMatch(lastDigit-length+1, length)
+		}
 		breaks = false
 	}
 }
@@ -436,7 +440,9 @@ func (this *Redaction) matchDOB(input string) {
 			}
 			if isDOB(totalGroupLength) && breaks && numBreaks == 2 && validYear {
 				if groupLength == 2 && validDateDigit(firstDigit, secondDigit) && validMonth || groupLength == 4 {
-					this.appendMatch(start, length)
+					if i != len(input)-1 && input[i+1] != breakType {
+						this.appendMatch(start, length)
+					}
 					startChar = 'x'
 				}
 				if firstDigit > '1' {
@@ -561,7 +567,7 @@ func (this *Redaction) matchDOB(input string) {
 		}
 		if length == 2 && monthCandidate && groupLength <= 2 {
 			if i < len(input)-1 {
-				if input[i+1] == ',' { //
+				if input[i+1] == ',' {
 					this.appendMatch(monthStart, monthLength+length+1)
 				}
 			}

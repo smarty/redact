@@ -24,10 +24,6 @@ func TestRedactCreditCard(t *testing.T) {
 		"Blank *******************.",
 	)
 	assertRedaction(t, redaction,
-		"Blank 5500-0000-0000-0004.",
-		"Blank *******************.",
-	)
-	assertRedaction(t, redaction,
 		"36551639043330",
 		"**************",
 	)
@@ -101,7 +97,6 @@ func TestRedactDOB(t *testing.T) {
 		" Apr 39 ",
 		" Apr 39 ",
 	)
-
 	assertRedaction(t, redaction,
 		"APRIL 3, 2019",
 		"******** 2019",
@@ -123,7 +118,6 @@ func TestRedactDOB(t *testing.T) {
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",
 	)
-
 	assertRedaction(t, redaction,
 		"Jan 1, 2021",
 		"****** 2021",
@@ -132,7 +126,6 @@ func TestRedactDOB(t *testing.T) {
 		" February 1, 2020",
 		" *********** 2020",
 	)
-
 	assertRedaction(t, redaction,
 		"30-12-12",
 		"30-12-12",

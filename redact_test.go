@@ -1,6 +1,7 @@
 package redact
 
 import "testing"
+
 func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
 	actual := redaction.All(input)
 	if actual == expected {

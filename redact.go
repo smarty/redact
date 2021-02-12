@@ -102,7 +102,7 @@ func (this *Redaction) matchCreditCard(input string) {
 				numGroups++
 				lengthGroup = 0
 			}
-			if creditCardBreakNotFound(character) && i != len(input) - 1 && !isNumeric(input[i - 1]){
+			if creditCardBreakNotFound(character) && i != len(input)-1 && !isNumeric(input[i-1]) {
 				lastDigit = i - 1
 				length = 0
 				totalSum = 0
@@ -115,15 +115,26 @@ func (this *Redaction) matchCreditCard(input string) {
 				continue
 			}
 			if isCandidate {
-				if breakType == character && i > 0 && isNumeric(input[i-1]) {
+				if breakType == character {
 					breaks = true
 					numBreaks++
-				}else{
-					breaks = false
 				}
 				if breakType == 'x' {
 					breakType = character
 					numBreaks++
+				}
+				if breakType != character {
+					breaks = false
+					lastDigit = i - 1
+					length = 0
+					totalSum = 0
+					totalNumbers = 0
+					isCandidate = false
+					breaks = false
+					breakType = 'x'
+					numBreaks = 0
+					numGroups = 0
+					continue
 				}
 			}
 			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {

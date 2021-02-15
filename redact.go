@@ -3,12 +3,14 @@ package redact
 type Redaction struct {
 	used    []bool
 	matches []match
+	phone *phoneRedaction
 }
 
 func New() *Redaction {
 	return &Redaction{
 		used:    make([]bool, 512),
 		matches: make([]match, 0, 16),
+		phone: &phoneRedaction{},
 	}
 }
 func (this *Redaction) All(input string) string {
@@ -26,6 +28,7 @@ func (this *Redaction) clear() {
 	for i := range this.used {
 		this.used[i] = false
 	}
+	this.phone.clear()
 }
 func (this *Redaction) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
@@ -124,8 +127,8 @@ func (this *Redaction) matchCreditCard(input string) {
 					breakType = character
 					numBreaks++
 				}
-				if breakType != character{
-					if i < len(input)-1 && isNumeric(input[i+1]){
+				if breakType != character {
+					if i < len(input)-1 && isNumeric(input[i+1]) {
 						breaks = false
 						lastDigit = i - 1
 						length = 0
@@ -195,10 +198,10 @@ func (this *Redaction) matchCreditCard(input string) {
 		totalSum += number
 		length++
 	}
-	if numBreaks == 0{
+	if numBreaks == 0 {
 		breaks = true
 	}
-	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) && breaks{
+	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) && breaks {
 		if numBreaks == 0 || numBreaks > 1 && numBreaks < 5 {
 			this.appendMatch(lastDigit-length+1, length)
 		}
@@ -235,129 +238,19 @@ func emailBreakNotFound(character byte) bool {
 	return character != '.' && character != ' '
 }
 
-func (this *Redaction) matchPhone(input string) {
-	var start int
-	var length int
-	var numbers int
-	var parenBreak bool
-	var breakType byte
-	var matchBreaks bool
-	var breaks int
-	var isCandidate bool
 
-	for i := 0; i < len(input)-1; i++ {
-		if this.used[i] {
-			continue
-		}
-		character := input[i]
-		if !isNumeric(character) {
-			if character == '+' {
-				start = i + 2
-				length--
-				numbers--
-				continue
-			}
-			if isPhoneNumber(numbers) {
-				if correctBreaks(breaks, parenBreak, matchBreaks) {
-					this.appendMatch(start, length)
-				}
-				length = 0
-				numbers = 0
-				breaks = 0
-				start = i + 1
-				matchBreaks = false
-				parenBreak = false
-				continue
-			}
-			if phoneBreakNotFound(character) {
-				start = i + 1
-				length = 0
-				numbers = 0
-				isCandidate = false
-				continue
-			}
-			if character == '(' {
-				start = i
-				isCandidate = true
-				length++
-				breaks++
-				parenBreak = true
-				continue
-			}
-			if character == ')' {
-				length++
-				breaks++
-				parenBreak = true
-				continue
-			}
-			if i < len(input)-1 && !isNumeric(input[i+1]) {
-				length = 0
-				numbers = 0
-				start = i + 1
-				breaks = 0
-				parenBreak = false
-				continue
-			}
-			if isCandidate {
-				length++
-				if breakType == character && numbers == 6 {
-					matchBreaks = true
-				} else {
-					matchBreaks = false
-				}
-				if numbers == 3 {
-					breakType = character
-				}
-			}
-			breaks++
-			continue
-		}
-		if isCandidate {
-			length++
-			numbers++
-		} else {
-			isCandidate = true
-			start = i
-			length++
-			numbers++
-			breaks = 0
-			matchBreaks = false
-			parenBreak = false
-		}
-	}
-	if isNumeric(input[len(input)-1]) {
-		length++
-		numbers++
-	}
-	if isPhoneNumber(numbers) {
-		if correctBreaks(breaks, parenBreak, matchBreaks) {
-			this.appendMatch(start, length)
-		}
-		length = 0
-		numbers = 0
-		breaks = 0
-		parenBreak = false
-		matchBreaks = false
-	}
+
+func (this *Redaction) matchPhone(input string) {
+	this.phone.used = this.used
+	this.phone.matches = this.matches
+
+	this.phone.match(input)
+
+	this.used = this.phone.used
+	this.matches = this.phone.matches
 }
-func phoneBreakNotFound(character byte) bool {
-	return character != '-' && character != '(' && character != ')'
-}
-func isPhoneNumber(length int) bool {
-	return length == 10
-}
-func correctBreaks(breaks int, parenBreak, matchBreak bool) bool {
-	if breaks == 3 && parenBreak {
-		return true
-	}
-	if breaks == 4 && parenBreak {
-		return true
-	}
-	if breaks == 2 && matchBreak {
-		return true
-	}
-	return false
-}
+
+
 
 func (this *Redaction) matchSSN(input string) {
 	var start int

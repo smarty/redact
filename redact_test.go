@@ -19,12 +19,16 @@ func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"52353330555760656D3FC1D315E80069",
+		"52353330555760656D3FC1D315E80069",
+	)
+	assertRedaction(t, redaction,
 		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
 		"*********************** *******************. taco ",
 	)
 	assertRedaction(t, redaction,
-		"10415  80932-1415",
-		"10415  80932-1415",
+		"4556-7375-8689-9855 ",
+		"******************* ",
 	)
 }
 func TestRedactEmail(t *testing.T) {

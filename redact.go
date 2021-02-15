@@ -5,6 +5,7 @@ type Redaction struct {
 	matches []match
 	phone   *phoneRedaction
 	ssn     *ssnRedaction
+	credit  *creditCardRedaction
 }
 
 func New() *Redaction {
@@ -13,6 +14,7 @@ func New() *Redaction {
 		matches: make([]match, 0, 16),
 		phone:   &phoneRedaction{},
 		ssn:     &ssnRedaction{},
+		credit:  &creditCardRedaction{},
 	}
 }
 func (this *Redaction) All(input string) string {
@@ -32,6 +34,7 @@ func (this *Redaction) clear() {
 	}
 	this.phone.clear()
 	this.ssn.clear()
+	this.credit.clear()
 }
 func (this *Redaction) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
@@ -72,147 +75,13 @@ func isValidNetwork(character byte) bool {
 }
 
 func (this *Redaction) matchCreditCard(input string) {
-	var lastDigit int
-	var length int
-	var totalNumbers int
-	var isOdd bool
-	var isCandidate bool
-	var totalSum int
-	var breaks bool
-	var numBreaks int
-	var lengthGroup int
-	var numGroups int
-	var breakType byte = 'x'
-	breaks = true
+	this.credit.used = this.used
+	this.credit.matches = this.matches
 
-	for i := len(input) - 1; i > 0; i-- {
-		character := input[i]
-		if !isNumeric(input[i]) {
-			if totalNumbers > 12 && totalNumbers < 19 && totalSum%10 == 0 && breaks && isValidNetwork(input[i+1]) && (numGroups == 3 || numGroups == 4 || numGroups == 0) {
-				if numBreaks == 0 || numBreaks == 3 || numBreaks == 2 {
-					this.appendMatch(lastDigit-length+1, length)
-				}
-				breaks = false
-				breakType = 'x'
-				length = 0
-				totalSum = 0
-				isOdd = false
-				lastDigit = i - 1
-				totalNumbers = 0
-				numBreaks = 0
-				numGroups = 0
-				continue
-			}
-			if lengthGroup > 6 || lengthGroup < 4 {
-				lengthGroup = 0
-			} else {
-				numGroups++
-				lengthGroup = 0
-			}
-			if creditCardBreakNotFound(character) && i != len(input)-1 && !isNumeric(input[i-1]) {
-				lastDigit = i - 1
-				length = 0
-				totalSum = 0
-				totalNumbers = 0
-				isCandidate = false
-				breaks = false
-				breakType = 'x'
-				numBreaks = 0
-				numGroups = 0
-				continue
-			}
-			if isCandidate {
-				if breakType == character && !creditCardBreakNotFound(character) {
-					breaks = true
-					numBreaks++
-				}
-				if breakType == 'x' && !creditCardBreakNotFound(character) {
-					breakType = character
-					numBreaks++
-				}
-				if breakType != character {
-					if i < len(input)-1 && isNumeric(input[i+1]) {
-						breaks = false
-						lastDigit = i - 1
-						length = 0
-						totalSum = 0
-						totalNumbers = 0
-						isCandidate = false
-						breakType = 'x'
-						numGroups = 0
-						numBreaks++
-						continue
-					}
-					lastDigit = i - 1
-					length = 0
-					totalSum = 0
-					totalNumbers = 0
-					isCandidate = false
-					breakType = 'x'
-					numBreaks = 0
-					numGroups = 0
-					continue
-				}
-			}
-			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
-				continue
-			}
-			length++
-		} else {
-			isOdd = !isOdd
-			totalNumbers++
-			lengthGroup++
-			number := int(character - '0')
-			if !isOdd {
-				number += number
-				if number > 9 {
-					number -= 9
-				}
-			}
-			totalSum += number
+	this.credit.match(input)
 
-			if isCandidate {
-				length++
-			} else {
-				isCandidate = true
-				breakType = 'x'
-				breaks = false
-				lastDigit = i
-				totalNumbers = 1
-				if length == 0 {
-					length++
-				}
-			}
-		}
-	}
-	if isNumeric(input[0]) {
-		isOdd = !isOdd
-		totalNumbers++
-		number := int(input[0] - '0')
-		if !isOdd {
-			number += number
-			if number > 9 {
-				number -= 9
-			}
-		}
-		if numBreaks > 0 {
-			numGroups++
-		}
-		totalSum += number
-		length++
-	}
-	if numBreaks == 0 {
-		breaks = true
-	}
-	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) && breaks {
-		if numBreaks == 0 || numBreaks > 1 && numBreaks < 5 {
-			this.appendMatch(lastDigit-length+1, length)
-		}
-		breaks = false
-	}
-}
-func creditCardBreakNotFound(character byte) bool {
-	return character != '-' && character != ' '
+	this.used = this.credit.used
+	this.matches = this.credit.matches
 }
 
 func (this *Redaction) matchEmail(input string) {
@@ -259,7 +128,6 @@ func (this *Redaction) matchSSN(input string) {
 	this.matches = this.ssn.matches
 	this.used = this.ssn.used
 }
-
 
 func (this *Redaction) matchDOB(input string) {
 	var start int

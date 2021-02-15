@@ -41,7 +41,7 @@ func TestRedactPhone(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"801-111-1111 and (801) 111-1111 +1(801)111-1111 taco", //TODO: Fix phone number starting at the beginning.
+		"801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
 		"************ and (801) 111-1111 +1************* taco",
 	)
 	assertRedaction(t, redaction,

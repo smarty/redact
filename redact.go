@@ -3,14 +3,16 @@ package redact
 type Redaction struct {
 	used    []bool
 	matches []match
-	phone *phoneRedaction
+	phone   *phoneRedaction
+	ssn     *ssnRedaction
 }
 
 func New() *Redaction {
 	return &Redaction{
 		used:    make([]bool, 512),
 		matches: make([]match, 0, 16),
-		phone: &phoneRedaction{},
+		phone:   &phoneRedaction{},
+		ssn:     &ssnRedaction{},
 	}
 }
 func (this *Redaction) All(input string) string {
@@ -29,6 +31,7 @@ func (this *Redaction) clear() {
 		this.used[i] = false
 	}
 	this.phone.clear()
+	this.ssn.clear()
 }
 func (this *Redaction) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
@@ -238,8 +241,6 @@ func emailBreakNotFound(character byte) bool {
 	return character != '.' && character != ' '
 }
 
-
-
 func (this *Redaction) matchPhone(input string) {
 	this.phone.used = this.used
 	this.phone.matches = this.matches
@@ -249,81 +250,16 @@ func (this *Redaction) matchPhone(input string) {
 	this.used = this.phone.used
 	this.matches = this.phone.matches
 }
-
-
-
 func (this *Redaction) matchSSN(input string) {
-	var start int
-	var length int
-	var numbers int
-	var breaks bool
-	var numBreaks int
-	var breakType byte = 'x'
-	var isCandidate bool
-	for i := 0; i < len(input)-1; i++ {
-		character := input[i]
-		if this.used[i] {
-			continue
-		}
-		if !isNumeric(character) {
-			if isSSN(numbers) && breaks && numBreaks == 2 {
-				this.appendMatch(start, length)
-				numbers = 0
-				breaks = false
-				breakType = 'x'
-				numBreaks = 0
-				length = 0
-				start = i + 1
-				isCandidate = false
-				continue
-			}
-			if ssnBreakNotFound(character) {
-				start = i + 1
-				numbers = 0
-				breaks = false
-				breakType = 'x'
-				numBreaks = 0
-				length = 0
-				isCandidate = false
-				continue
-			}
-			if isCandidate && i < len(input)-1 && isNumeric(input[i+1]) {
-				length++
-				if breakType == character && numbers == 5 {
-					breaks = true
-				}
-				if numbers == 3 {
-					breakType = character
-				}
-			}
-			numBreaks++
-			continue
-		}
-		if isCandidate {
-			numbers++
-			length++
-		} else {
-			isCandidate = true
-			breaks = false
-			start = i
-			numbers++
-			length++
-		}
-	}
-	if isNumeric(input[len(input)-1]) {
-		numbers++
-		length++
-	}
-	if isSSN(numbers) && breaks {
-		this.appendMatch(start, length)
-	}
+	this.ssn.matches = this.matches
+	this.ssn.used = this.used
+
+	this.ssn.match(input)
+
+	this.matches = this.ssn.matches
+	this.used = this.ssn.used
 }
-func ssnBreakNotFound(character byte) bool {
-	return character != '-' && character != ' '
-}
-func isSSN(length int) bool {
-	return length == 9
-}
+
 
 func (this *Redaction) matchDOB(input string) {
 	var start int

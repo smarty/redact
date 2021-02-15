@@ -13,7 +13,7 @@ type phoneRedaction struct {
 	matches     []match
 }
 
-func (this *phoneRedaction) clear(){
+func (this *phoneRedaction) clear() {
 	this.resetMatchValues()
 	this.start = 0
 	this.breakType = 0
@@ -93,21 +93,19 @@ func (this *phoneRedaction) match(input string) {
 			continue
 		}
 		if this.isCandidate {
-			this.length++
-			this.numbers++
+			this.incrementLength()
+
 		} else {
 			this.isCandidate = true
 			this.start = i
-			this.length++
-			this.numbers++
+			this.incrementLength()
 			this.breaks = 0
 			this.matchBreaks = false
 			this.parenBreak = false
 		}
 	}
 	if isNumeric(input[len(input)-1]) {
-		this.length++
-		this.numbers++
+		this.incrementLength()
 	}
 	if isPhoneNumber(this.numbers) {
 		if correctBreaks(this.breaks, this.parenBreak, this.matchBreaks) {
@@ -115,6 +113,11 @@ func (this *phoneRedaction) match(input string) {
 		}
 		this.resetMatchValues()
 	}
+}
+
+func (this *phoneRedaction) incrementLength() {
+	this.length++
+	this.numbers++
 }
 
 func (this *phoneRedaction) resetMatchValues() {
@@ -143,4 +146,3 @@ func correctBreaks(breaks int, parenBreak, matchBreak bool) bool {
 	}
 	return false
 }
-

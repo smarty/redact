@@ -77,6 +77,7 @@ func (this *Redaction) matchCreditCard(input string) {
 	var lengthGroup int
 	var numGroups int
 	var breakType byte = 'x'
+	breaks = true
 
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
@@ -123,14 +124,24 @@ func (this *Redaction) matchCreditCard(input string) {
 					breakType = character
 					numBreaks++
 				}
-				if breakType != character {
-					breaks = false
+				if breakType != character{
+					if i < len(input)-1 && isNumeric(input[i+1]){
+						breaks = false
+						lastDigit = i - 1
+						length = 0
+						totalSum = 0
+						totalNumbers = 0
+						isCandidate = false
+						breakType = 'x'
+						numGroups = 0
+						numBreaks++
+						continue
+					}
 					lastDigit = i - 1
 					length = 0
 					totalSum = 0
 					totalNumbers = 0
 					isCandidate = false
-					breaks = false
 					breakType = 'x'
 					numBreaks = 0
 					numGroups = 0
@@ -184,7 +195,10 @@ func (this *Redaction) matchCreditCard(input string) {
 		totalSum += number
 		length++
 	}
-	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) {
+	if numBreaks == 0{
+		breaks = true
+	}
+	if totalNumbers > 12 && totalNumbers < 20 && totalSum%10 == 0 && isValidNetwork(input[0]) && (numGroups < 7 && numGroups > 2 || numGroups == 0) && breaks{
 		if numBreaks == 0 || numBreaks > 1 && numBreaks < 5 {
 			this.appendMatch(lastDigit-length+1, length)
 		}

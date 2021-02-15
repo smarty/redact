@@ -17,7 +17,6 @@ func assertRedaction(t *testing.T, redaction *Redaction, input, expected string)
 }
 func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()
-
 	redaction := New()
 	assertRedaction(t, redaction,
 		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
@@ -40,7 +39,6 @@ func TestRedactEmail(t *testing.T) {
 }
 func TestRedactPhone(t *testing.T) {
 	t.Parallel()
-
 	redaction := New()
 	assertRedaction(t, redaction,
 		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",

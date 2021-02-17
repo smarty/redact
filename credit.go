@@ -15,7 +15,6 @@ type creditCardRedaction struct {
 	breakType    byte
 }
 
-
 func (this *creditCardRedaction) clear() {
 	this.resetMatchValues()
 	this.lastDigit = 0
@@ -31,7 +30,9 @@ func (this *creditCardRedaction) match(input string) {
 					this.appendMatch(this.lastDigit-this.length+1, this.length)
 				}
 				this.lastDigit = i - 1
+				temp := this.isCandidate
 				this.resetMatchValues()
+				this.isCandidate = temp
 				continue
 			}
 			if this.lengthGroup > 6 || this.lengthGroup < 4 {
@@ -42,7 +43,14 @@ func (this *creditCardRedaction) match(input string) {
 			}
 			if creditCardBreakNotFound(character) && i != len(input)-1 && !isNumeric(input[i-1]) {
 				this.lastDigit = i - 1
-				this.resetMatchValues()
+				this.length = 0
+				this.totalSum = 0
+				this.totalNumbers = 0
+				this.isCandidate = false
+				this.breaks = false
+				this.breakType = 'x'
+				this.numBreaks = 0
+				this.numGroups = 0
 				continue
 			}
 			if this.isCandidate {
@@ -62,7 +70,14 @@ func (this *creditCardRedaction) match(input string) {
 						this.numBreaks++
 						continue
 					}
-					this.resetMatchValues()
+					this.lastDigit = i - 1
+					this.length = 0
+					this.totalSum = 0
+					this.totalNumbers = 0
+					this.isCandidate = false
+					this.breakType = 'x'
+					this.numBreaks = 0
+					this.numGroups = 0
 					continue
 				}
 			}
@@ -119,6 +134,7 @@ func (this *creditCardRedaction) match(input string) {
 	if this.validCardCheck(input) && this.breaks {
 		if this.validNumBreaks() {
 			this.appendMatch(this.lastDigit-this.length+1, this.length)
+			this.resetMatchValues()
 		}
 		this.breaks = false
 	}

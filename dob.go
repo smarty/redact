@@ -21,7 +21,6 @@ type dobRedaction struct {
 	validMonth       bool
 	validYear        bool
 }
-//FIXME: length 4 array of bytes instead of four variables
 
 func(this* dobRedaction) clear(){
 	this.resetMatchValues()
@@ -97,7 +96,6 @@ func (this *dobRedaction) match(input string) {
 			this.groupLength = 0
 			continue
 		}
-		//Todo: Switch so that is numeric comes first
 		this.totalGroupLength++
 		this.groupLength++
 

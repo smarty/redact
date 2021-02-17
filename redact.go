@@ -36,11 +36,11 @@ func (this *Redaction) All(input string) string {
 }
 func (this *Redaction) clear() {
 	this.matched.clear()
-	this.phone.clear()
-	this.ssn.clear()
 	this.credit.clear()
-	this.dob.clear()
 	this.email.clear()
+	this.ssn.clear()
+	this.phone.clear()
+	this.dob.clear()
 }
 
 func (this *Redaction) redactMatches(input string) string {

@@ -125,7 +125,7 @@ func (this *creditCardRedaction) match(input string) {
 		this.breaks = true
 	}
 	if this.validCardCheck(input) && this.breaks {
-		if this.validNumBreaks(){
+		if this.validNumBreaks() {
 			this.appendMatch(this.lastDigit-this.length+1, this.length)
 		}
 		this.breaks = false
@@ -155,4 +155,8 @@ func (this *creditCardRedaction) resetMatchValues() {
 
 func creditCardBreakNotFound(character byte) bool {
 	return character != '-' && character != ' '
+}
+
+func isValidNetwork(character byte) bool {
+	return character >= '3' && character <= '6'
 }

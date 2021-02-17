@@ -1,6 +1,7 @@
 package redact
 
 type dobRedaction struct {
+	*matched
 	start            int
 	length           int
 	isCandidate      bool
@@ -19,17 +20,8 @@ type dobRedaction struct {
 	fourthDigit      byte
 	validMonth       bool
 	validYear        bool
-	used             []bool
-	matches          []match
 }
-
-func (this *dobRedaction) appendMatch(start int, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
-
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
-}
+//FIXME: length 4 array of bytes instead of four variables
 
 func(this* dobRedaction) clear(){
 	this.resetMatchValues()
@@ -105,11 +97,11 @@ func (this *dobRedaction) match(input string) {
 			this.groupLength = 0
 			continue
 		}
-
+		//Todo: Switch so that is numeric comes first
 		this.totalGroupLength++
 		this.groupLength++
 
-		this.dateCalculator(character, i) //FIXME: Figure a better name.
+		this.dateCalculator(character, i)
 
 		if this.length == 2 && this.monthCandidate && this.groupLength <= 2 {
 			if i < len(input)-1 {

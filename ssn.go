@@ -1,6 +1,7 @@
 package redact
 
 type ssnRedaction struct {
+	*matched
 	start       int
 	length      int
 	numbers     int
@@ -8,16 +9,6 @@ type ssnRedaction struct {
 	numBreaks   int
 	breakType   byte
 	isCandidate bool
-	used        []bool
-	matches     []match
-}
-
-func (this *ssnRedaction) appendMatch(start int, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
-
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
 
 func (this *ssnRedaction) clear() {

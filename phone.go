@@ -1,6 +1,7 @@
 package redact
 
 type phoneRedaction struct {
+	*matched
 	start       int
 	length      int
 	numbers     int
@@ -9,8 +10,6 @@ type phoneRedaction struct {
 	matchBreaks bool
 	breakType   byte
 	isCandidate bool
-	used        []bool
-	matches     []match
 }
 
 func (this *phoneRedaction) clear() {
@@ -18,14 +17,6 @@ func (this *phoneRedaction) clear() {
 	this.start = 0
 	this.breakType = 0
 	this.isCandidate = false
-}
-
-func (this *phoneRedaction) appendMatch(start int, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
-
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
 
 func (this *phoneRedaction) match(input string) {

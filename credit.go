@@ -1,6 +1,7 @@
 package redact
 
 type creditCardRedaction struct {
+	*matched
 	lastDigit    int
 	length       int
 	totalNumbers int
@@ -12,17 +13,8 @@ type creditCardRedaction struct {
 	lengthGroup  int
 	numGroups    int
 	breakType    byte
-	used         []bool
-	matches      []match
 }
 
-func (this *creditCardRedaction) appendMatch(start int, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
-
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
-}
 
 func (this *creditCardRedaction) clear() {
 	this.resetMatchValues()

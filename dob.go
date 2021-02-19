@@ -30,7 +30,7 @@ func(this* dobRedaction) clear(){
 	this.breakType = 0
 }
 
-func (this *dobRedaction) match(input string) {
+func (this *dobRedaction) match(input []byte) {
 	this.resetYearValues()
 	this.startChar = 'x'
 

@@ -16,7 +16,7 @@ func (this *ssnRedaction) clear() {
 	this.start = 0
 }
 
-func (this *ssnRedaction) match(input string) {
+func (this *ssnRedaction) match(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
 		if this.used[i] {

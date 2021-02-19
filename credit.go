@@ -21,7 +21,7 @@ func (this *creditCardRedaction) clear() {
 	this.lengthGroup = 0
 }
 
-func (this *creditCardRedaction) match(input string) {
+func (this *creditCardRedaction) match(input []byte) {
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {
@@ -145,7 +145,7 @@ func (this *creditCardRedaction) validNumBreaks() bool {
 	return this.numBreaks == 0 || this.numBreaks > 1 && this.numBreaks < 5
 }
 
-func (this *creditCardRedaction) validCardCheck(input string) bool {
+func (this *creditCardRedaction) validCardCheck(input []byte) bool {
 	return this.totalNumbers > 12 && this.totalNumbers < 20 && this.totalSum%10 == 0 && isValidNetwork(input[0]) && (this.numGroups < 7 && this.numGroups > 2 || this.numGroups == 0) && this.breaks
 }
 

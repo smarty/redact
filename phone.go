@@ -19,7 +19,7 @@ func (this *phoneRedaction) clear() {
 	this.isCandidate = false
 }
 
-func (this *phoneRedaction) match(input string) {
+func (this *phoneRedaction) match(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		if this.used[i] {
 			continue

@@ -24,7 +24,7 @@ func New() *Redaction {
 	}
 }
 
-func (this *Redaction) All(input string) string {
+func (this *Redaction) All(input []byte) []byte {
 	this.clear()
 	this.credit.match(input)
 	this.email.match(input)
@@ -43,12 +43,12 @@ func (this *Redaction) clear() {
 	this.dob.clear()
 }
 
-func (this *Redaction) redactMatches(input string) string {
+func (this *Redaction) redactMatches(input []byte) []byte {
 	if len(this.matches) == 0 {
 		return input // no changes to redact
 	}
 
-	buffer := []byte(input)
+	buffer := input
 	bufferLength := len(buffer)
 	var lowIndex, highIndex int
 
@@ -66,7 +66,7 @@ func (this *Redaction) redactMatches(input string) string {
 		}
 	}
 
-	output := string(buffer)
+	output := buffer
 	return output
 }
 

@@ -6,7 +6,7 @@ type emailRedaction struct {
 	length int
 }
 
-func (this *emailRedaction) match(input string) {
+func (this *emailRedaction) match(input []byte) {
 	for i := 0; i < len(input); i++ {
 		character := input[i]
 		if this.used[i] {

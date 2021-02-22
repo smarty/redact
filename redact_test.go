@@ -5,17 +5,16 @@ import "testing"
 func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
 	inputByte := []byte(input)
 	actual := redaction.All(inputByte)
-	for i, item := range actual{
-		if item != expected[i]{
-			t.Helper()
-			t.Errorf("\n"+
-				"Expected: %s\n"+
-				"Actual:   %s",
-				expected,
-				actual,
-			)
-		}
+	if string(actual) == expected {
+		return
 	}
+	t.Helper()
+	t.Errorf("\n"+
+		"Expected: %s\n"+
+		"Actual:   %s",
+		expected,
+		actual,
+	)
 }
 func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()

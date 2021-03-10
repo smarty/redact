@@ -2,11 +2,12 @@ package redact
 
 type Redactor struct {
 	*matched
-	phone  *phoneRedaction
-	ssn    *ssnRedaction
-	credit *creditCardRedaction
-	dob    *dobRedaction
-	email  *emailRedaction
+	phone   *phoneRedaction
+	ssn     *ssnRedaction
+	credit  *creditCardRedaction
+	dob     *dobRedaction
+	email   *emailRedaction
+	monitor monitor
 }
 
 func (this *Redactor) All(input []byte) []byte {
@@ -29,9 +30,12 @@ func (this *Redactor) clear() {
 }
 
 func (this *Redactor) redactMatches(input []byte) []byte {
-	if len(this.matches) == 0 {
+	count := len(this.matches)
+	if count == 0 {
 		return input // no changes to redact
 	}
+
+	this.monitor.Redacted(count)
 
 	buffer := input
 	bufferLength := len(buffer)

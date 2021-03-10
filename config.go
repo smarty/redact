@@ -26,6 +26,7 @@ func New(options ...option) *Redactor {
 		credit:  &creditCardRedaction{matched: matched},
 		dob:     &dobRedaction{matched: matched},
 		email:   &emailRedaction{matched: matched},
+		monitor: config.Monitor,
 	}
 }
 

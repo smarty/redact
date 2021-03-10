@@ -20,6 +20,10 @@ func TestRedactCreditCard(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"",
+		"",
+	)
+	assertRedaction(t, redaction,
 		"52353330555760656D3FC1D315E80069",
 		"52353330555760656D3FC1D315E80069",
 	)
@@ -31,6 +35,7 @@ func TestRedactCreditCard(t *testing.T) {
 		"4556-7375-8689-9855 ",
 		"******************* ",
 	)
+
 }
 func TestRedactEmail(t *testing.T) {
 	t.Parallel()

@@ -7,6 +7,9 @@ type emailRedaction struct {
 }
 
 func (this *emailRedaction) match(input []byte) {
+	if len(input) <= 0 {
+		return
+	}
 	for i := 0; i < len(input); i++ {
 		character := input[i]
 		if this.used[i] {

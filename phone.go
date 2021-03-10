@@ -20,6 +20,9 @@ func (this *phoneRedaction) clear() {
 }
 
 func (this *phoneRedaction) match(input []byte) {
+	if len(input) <= 0 {
+		return
+	}
 	for i := 0; i < len(input)-1; i++ {
 		if this.used[i] {
 			continue

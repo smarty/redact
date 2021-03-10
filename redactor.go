@@ -1,6 +1,6 @@
 package redact
 
-type Redaction struct {
+type Redactor struct {
 	*matched
 	phone  *phoneRedaction
 	ssn    *ssnRedaction
@@ -9,12 +9,12 @@ type Redaction struct {
 	email  *emailRedaction
 }
 
-func New() *Redaction {
+func New() *Redactor {
 	matched := &matched{
 		used:    make([]bool, 512),
 		matches: make([]match, 0, 16),
 	}
-	return &Redaction{
+	return &Redactor{
 		matched: matched,
 		phone:   &phoneRedaction{matched: matched},
 		ssn:     &ssnRedaction{matched: matched},
@@ -24,7 +24,7 @@ func New() *Redaction {
 	}
 }
 
-func (this *Redaction) All(input []byte) []byte {
+func (this *Redactor) All(input []byte) []byte {
 	this.clear()
 	this.credit.match(input)
 	this.email.match(input)
@@ -34,7 +34,7 @@ func (this *Redaction) All(input []byte) []byte {
 	result := this.redactMatches(input)
 	return result
 }
-func (this *Redaction) clear() {
+func (this *Redactor) clear() {
 	this.matched.clear()
 	this.credit.clear()
 	this.email.clear()
@@ -43,7 +43,7 @@ func (this *Redaction) clear() {
 	this.dob.clear()
 }
 
-func (this *Redaction) redactMatches(input []byte) []byte {
+func (this *Redactor) redactMatches(input []byte) []byte {
 	if len(this.matches) == 0 {
 		return input // no changes to redact
 	}

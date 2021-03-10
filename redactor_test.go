@@ -2,7 +2,7 @@ package redact
 
 import "testing"
 
-func assertRedaction(t *testing.T, redaction *Redaction, input, expected string) {
+func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) {
 	inputByte := []byte(input)
 	actual := redaction.All(inputByte)
 	if string(actual) == expected {

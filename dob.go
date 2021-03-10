@@ -22,7 +22,7 @@ type dobRedaction struct {
 	validYear        bool
 }
 
-func(this* dobRedaction) clear(){
+func (this *dobRedaction) clear() {
 	this.resetMatchValues()
 	this.resetYearValues()
 	this.startChar = 'x'

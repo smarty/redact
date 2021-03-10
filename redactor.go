@@ -9,21 +9,6 @@ type Redactor struct {
 	email  *emailRedaction
 }
 
-func New() *Redactor {
-	matched := &matched{
-		used:    make([]bool, 512),
-		matches: make([]match, 0, 16),
-	}
-	return &Redactor{
-		matched: matched,
-		phone:   &phoneRedaction{matched: matched},
-		ssn:     &ssnRedaction{matched: matched},
-		credit:  &creditCardRedaction{matched: matched},
-		dob:     &dobRedaction{matched: matched},
-		email:   &emailRedaction{matched: matched},
-	}
-}
-
 func (this *Redactor) All(input []byte) []byte {
 	this.clear()
 	this.credit.match(input)

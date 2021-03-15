@@ -34,7 +34,6 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 	if count == 0 {
 		return input // no changes to redact
 	}
-
 	this.monitor.Redacted(count)
 
 	buffer := input
@@ -76,9 +75,9 @@ func (this *matched) appendMatch(start, length int) {
 	for i := start; i <= start+length; i++ {
 		this.used[i] = true
 	}
-
 	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
+
 func (this *matched) clear() {
 	this.matches = this.matches[0:0]
 	for i := range this.used {

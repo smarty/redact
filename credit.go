@@ -27,7 +27,7 @@ func (this *creditCardRedaction) match(input []byte) {
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {
-			if this.validCardCheck(input) && isValidNetwork(input[i+1]) {
+			if this.validCardCheck() && isValidNetwork(input[i+1]) {
 				if this.numBreaks == 0 || this.numBreaks > 1 {
 					this.appendMatch(this.lastDigitIndex-this.length+1, this.length)
 				}
@@ -56,13 +56,25 @@ func (this *creditCardRedaction) match(input []byte) {
 			}
 			if this.isCandidate {
 				if this.breakType == character && !creditCardBreakNotFound(character) {
-					this.numBreaks++
+					if i != len(input)-1 && isNumeric(input[i+1]) {
+						this.numBreaks++
+					} else {
+						this.resetMatchValues()
+						this.lastDigitIndex = i - 1
+						this.length = 0
+						this.totalSum = 0
+						this.totalNumbers = 0
+						this.isCandidate = false
+						this.breakType = 'x'
+						this.numBreaks = 0
+						this.numGroups = 0
+					}
 				}
 				if this.breakType == 'x' && !creditCardBreakNotFound(character) {
 					this.breakType = character
 					this.numBreaks++
 				}
-				if this.breakType != character{
+				if this.breakType != character {
 					if i < len(input)-1 && isNumeric(input[i+1]) {
 						temp := this.numBreaks
 						this.resetMatchValues()
@@ -127,7 +139,7 @@ func (this *creditCardRedaction) match(input []byte) {
 		this.totalSum += number
 		this.length++
 	}
-	if this.validCardCheck(input){
+	if this.validCardCheck() {
 		if this.numBreaks == 0 || this.numBreaks > 1 {
 			start := (this.lastDigitIndex + 1) - this.length
 			if isValidNetwork(input[start]) {
@@ -138,7 +150,7 @@ func (this *creditCardRedaction) match(input []byte) {
 	}
 }
 
-func (this *creditCardRedaction) validCardCheck(input []byte) bool {
+func (this *creditCardRedaction) validCardCheck() bool {
 	if this.totalNumbers <= 12 {
 		return false
 	}
@@ -169,7 +181,6 @@ func (this *creditCardRedaction) resetMatchValues() {
 func creditCardBreakNotFound(character byte) bool {
 	return character != '-' && character != ' '
 }
-
 func isValidNetwork(character byte) bool {
 	return character >= '3' && character <= '6'
 }

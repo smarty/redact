@@ -7,6 +7,7 @@ type creditCardRedaction struct {
 	totalNumbers   int
 	isOdd          bool
 	isCandidate    bool
+	isLetter       bool
 	totalSum       int
 	numBreaks      int
 	lengthGroup    int
@@ -30,6 +31,7 @@ func (this *creditCardRedaction) match(input []byte) {
 			if this.validCardCheck() && isValidNetwork(input[i+1]) {
 				if this.numBreaks == 0 || this.numBreaks > 1 {
 					this.appendMatch(this.lastDigitIndex-this.length+1, this.length)
+					this.isLetter = false
 				}
 				this.lastDigitIndex = i - 1
 				temp := this.isCandidate
@@ -54,7 +56,7 @@ func (this *creditCardRedaction) match(input []byte) {
 				this.numGroups = 0
 				continue
 			}
-			if this.isCandidate {
+			if this.isCandidate || isLetter(character) {
 				if this.breakType == character && !creditCardBreakNotFound(character) {
 					if i != len(input)-1 && isNumeric(input[i+1]) {
 						this.numBreaks++
@@ -74,7 +76,7 @@ func (this *creditCardRedaction) match(input []byte) {
 					this.breakType = character
 					this.numBreaks++
 				}
-				if this.breakType != character {
+				if character != this.breakType {
 					if i < len(input)-1 && isNumeric(input[i+1]) {
 						temp := this.numBreaks
 						this.resetMatchValues()
@@ -140,12 +142,24 @@ func (this *creditCardRedaction) match(input []byte) {
 		this.length++
 	}
 	if this.validCardCheck() {
+		// if the numBreaks = 0 then numGroups = 0. BUT numGroups != 0 if numBreaks > 0
+		if this.numBreaks > 0 && this.numGroups == 0{
+			this.resetMatchValues()
+			this.isLetter = false
+		}
 		if this.numBreaks == 0 || this.numBreaks > 1 {
-			start := (this.lastDigitIndex + 1) - this.length
-			if isValidNetwork(input[start]) {
+			start := this.lastDigitIndex + 1 - this.length
+			index := start
+			if start < 0 {
+				index = start * -1
+				start = 0
+			}
+			if isValidNetwork(input[index]) {
 				this.appendMatch(start, this.length)
+				this.isLetter = false
 			}
 			this.resetMatchValues()
+			this.isLetter = false
 		}
 	}
 }
@@ -164,7 +178,6 @@ func (this *creditCardRedaction) validCardCheck() bool {
 		return false
 	}
 	return true
-	////return this.totalNumbers > 12 && this.totalNumbers < 20 && this.totalSum%10 == 0 && isValidNetwork(input[0]) && (this.numGroups < 7 && this.numGroups > 2 || this.numGroups == 0) && this.breaks
 }
 
 func (this *creditCardRedaction) resetMatchValues() {
@@ -183,4 +196,14 @@ func creditCardBreakNotFound(character byte) bool {
 }
 func isValidNetwork(character byte) bool {
 	return character >= '3' && character <= '6'
+}
+
+func isLetter(character byte) bool {
+	if character >= 65 || character <= 90 {
+		return true
+	}
+	if character >= 97 || character <= 122 {
+		return true
+	}
+	return false
 }

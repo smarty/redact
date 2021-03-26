@@ -25,12 +25,8 @@ func TestRedactCreditCard(t *testing.T) {
 		"",
 	)
 	assertRedaction(t, redaction,
-		"52353330555760656D3FC1D315E80069",
-		"52353330555760656D3FC1D315E80069",
-	)
-	assertRedaction(t, redaction,
-		"411111111111110 1111",
-		"411111111111110 1111",
+		"523d0555760656D3FC1D315E8",
+		"523d0555760656D3FC1D315E8",
 	)
 	assertRedaction(t, redaction,
 		"4111 1111 1111 11 10 111",
@@ -41,7 +37,7 @@ func TestRedactCreditCard(t *testing.T) {
 		"4111 1111 1111 1110-111",
 	)
 	assertRedaction(t, redaction,
-		"4111 1111 1111 1101 111 4556-7375-8689-9855. taco ",
+		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
 		"*********************** *******************. taco ",
 	)
 	assertRedaction(t, redaction,
@@ -49,48 +45,40 @@ func TestRedactCreditCard(t *testing.T) {
 		"*******************",
 	)
 	assertRedaction(t, redaction,
-		"4556-7375-8689-9855 ",
+		"6011-0009-9013-9424 ",
 		"******************* ",
 	)
 	assertRedaction(t, redaction,
-		"2556-7375-8689-9855 ",
-		"2556-7375-8689-9855 ",
-	)
-	assertRedaction(t, redaction,
-		"6556-7375-8689-9835 ",
-		"******************* ",
+		"1234-1234-1243-1234 ",
+		"1234-1234-1243-1234 ",
 	)
 	assertRedaction(t, redaction,
 		"4011111111111101111",
 		"4011111111111101111",
 	)
 	assertRedaction(t, redaction,
-		"6556-7371-8689-9835 ",
-		"6556-7371-8689-9835 ",
+		"6011-0o09-9013-9424 ",
+		"6011-0o09-9013-9424 ",
 	)
 	assertRedaction(t, redaction,
-		"6556-7a75-8689-9835 ",
-		"6556-7a75-8689-9835 ",
+		"3714-496353-98431 - O ",
+		"***************** - O ",
 	)
 	assertRedaction(t, redaction,
-		"6y56737586899835 ",
-		"6y56737586899835 ",
-	)
-	assertRedaction(t, redaction,
-		"6556-7375-8689-9835 taco.",
+		"6011-0009-9013-9424 taco.",
 		"******************* taco.",
 	)
 	assertRedaction(t, redaction,
-		"taco 6556-7375-8689-9835",
+		"taco 6011-0009-9013-9424",
 		"taco *******************",
 	)
 	assertRedaction(t, redaction,
-		"6556-7375-8689--9835 taco.",
-		"6556-7375-8689--9835 taco.",
+		"6011 0009 9013  9424 taco.",
+		"6011 0009 9013  9424 taco.",
 	)
 	assertRedaction(t, redaction,
-		"[329993740 873518800     ]",
-		"[329993740 873518800     ]",
+		"423432343 111110101     ",
+		"423432343 111110101     ",
 	)
 	assertRedaction(t, redaction,
 		"4111111111111101111TEST",
@@ -99,6 +87,10 @@ func TestRedactCreditCard(t *testing.T) {
 	assertRedaction(t, redaction,
 		"411 1111 1111 1110 1111ST",
 		"***********************ST",
+	)
+	assertRedaction(t, redaction,
+		"+41 11 111 11 0",
+		"+41 11 111 11 0",
 	)
 }
 func TestRedactEmail(t *testing.T) {

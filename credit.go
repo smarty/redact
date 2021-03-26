@@ -10,7 +10,7 @@ type creditCardRedaction struct {
 	isLetter       bool
 	totalSum       int
 	numBreaks      int
-	lengthGroup    int
+	groupLength    int
 	numGroups      int
 	breakType      byte
 }
@@ -18,7 +18,7 @@ type creditCardRedaction struct {
 func (this *creditCardRedaction) clear() {
 	this.resetMatchValues()
 	this.lastDigitIndex = 0
-	this.lengthGroup = 0
+	this.groupLength = 0
 }
 
 func (this *creditCardRedaction) match(input []byte) {
@@ -39,11 +39,11 @@ func (this *creditCardRedaction) match(input []byte) {
 				this.isCandidate = temp
 				continue
 			}
-			if this.lengthGroup > 6 || this.lengthGroup < 4 {
-				this.lengthGroup = 0
+			if this.groupLength > 6 || this.groupLength < 4 {
+				this.groupLength = 0
 			} else {
 				this.numGroups++
-				this.lengthGroup = 0
+				this.groupLength = 0
 			}
 			if creditCardBreakNotFound(character) && i != len(input)-1 && !isNumeric(input[i-1]) {
 				this.lastDigitIndex = i - 1
@@ -102,7 +102,7 @@ func (this *creditCardRedaction) match(input []byte) {
 		} else {
 			this.isOdd = !this.isOdd
 			this.totalNumbers++
-			this.lengthGroup++
+			this.groupLength++
 			number := int(character - '0')
 			if !this.isOdd {
 				number += number
@@ -142,12 +142,12 @@ func (this *creditCardRedaction) match(input []byte) {
 		this.length++
 	}
 	if this.validCardCheck() {
-		// if the numBreaks = 0 then numGroups = 0. BUT numGroups != 0 if numBreaks > 0
-		if this.numBreaks > 0 && this.numGroups == 0{
+		if this.numBreaks > 0 && this.numGroups == 0 {
 			this.resetMatchValues()
 			this.isLetter = false
 		}
-		if this.numBreaks == 0 || this.numBreaks > 1 {
+
+		if this.length > 0 && (this.numBreaks == 0 || this.numBreaks > 1) {
 			start := this.lastDigitIndex + 1 - this.length
 			index := start
 			if start < 0 {

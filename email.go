@@ -7,11 +7,15 @@ type emailRedaction struct {
 }
 
 func (this *emailRedaction) match(input []byte) {
+	var maxEmailLength = 254
 	if len(input) <= 0 {
 		return
 	}
 	for i := 0; i < len(input); i++ {
 		character := input[i]
+		if i > len(this.used)-1 {
+			return
+		}
 		if this.used[i] {
 			continue
 		}
@@ -26,6 +30,9 @@ func (this *emailRedaction) match(input []byte) {
 				this.length = 0
 			}
 			this.length++
+		}
+		if this.length > maxEmailLength {
+			this.length = 0
 		}
 	}
 }

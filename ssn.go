@@ -22,6 +22,9 @@ func (this *ssnRedaction) match(input []byte) {
 	}
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
+		if i > len(this.used)-1 {
+			return
+		}
 		if this.used[i] {
 			continue
 		}

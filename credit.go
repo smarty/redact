@@ -27,7 +27,7 @@ func (this *creditCardRedaction) match(input []byte) {
 	}
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
-		if !isNumeric(input[i]) {
+		if !isNumeric(character) {
 			if this.validCardCheck() && isValidNetwork(input[i+1]) {
 				if this.numBreaks == 0 || this.numBreaks > 1 {
 					this.appendMatch(this.lastDigitIndex-this.length+1, this.length)
@@ -194,8 +194,9 @@ func (this *creditCardRedaction) resetMatchValues() {
 func creditCardBreakNotFound(character byte) bool {
 	return character != '-' && character != ' '
 }
+
 func isValidNetwork(character byte) bool {
-	return character >= '3' && character <= '6'
+	return character >= '0' && character <= '9'
 }
 
 func isLetter(character byte) bool {

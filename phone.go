@@ -1,5 +1,17 @@
 package redact
 
+type phoneRedaction struct {
+	*matched
+	start       int
+	length      int
+	numbers     int
+	breaks      int
+	parenBreak  bool
+	matchBreaks bool
+	breakType   byte
+	isCandidate bool
+}
+
 func (this *phoneRedaction) clear() {
 	this.resetMatchValues()
 	this.start = 0

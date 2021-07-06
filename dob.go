@@ -1,5 +1,27 @@
 package redact
 
+type dobRedaction struct {
+	*matched
+	start            int
+	length           int
+	isCandidate      bool
+	monthStart       int
+	monthLength      int
+	monthCandidate   bool
+	startChar        byte
+	totalGroupLength int
+	breaks           bool
+	numBreaks        int
+	breakType        byte
+	groupLength      int
+	firstDigit       byte
+	secondDigit      byte
+	thirdDigit       byte
+	fourthDigit      byte
+	validMonth       bool
+	validYear        bool
+}
+
 func (this *dobRedaction) clear() {
 	this.resetMatchValues()
 	this.resetYearValues()

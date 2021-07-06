@@ -25,7 +25,7 @@ func main() {
 		}
 		items := bytes.Split(line, []byte("|"))
 		address := fmt.Sprintf("%s %s %s %s %s %s", items[15], items[16], items[17], items[18], items[19], items[20])
-		redacted := redactor.RedactAll([]byte(address))
+		redacted := redactor.All([]byte(address))
 		if address != string(redacted) && !strings.Contains(address, "@") {
 			fmt.Printf("[%s] [%s] \n", address, redacted)
 		}

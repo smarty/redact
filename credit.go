@@ -1,20 +1,5 @@
 package redact
 
-type creditCardRedaction struct {
-	*matched
-	lastDigitIndex int
-	length         int
-	totalNumbers   int
-	isOdd          bool
-	isCandidate    bool
-	isLetter       bool
-	totalSum       int
-	numBreaks      int
-	groupLength    int
-	numGroups      int
-	breakType      byte
-}
-
 func (this *creditCardRedaction) clear() {
 	this.resetMatchValues()
 	this.lastDigitIndex = 0

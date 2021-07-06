@@ -1,16 +1,5 @@
 package redact
 
-type ssnRedaction struct {
-	*matched
-	start       int
-	length      int
-	numbers     int
-	breaks      bool
-	numBreaks   int
-	breakType   byte
-	isCandidate bool
-}
-
 func (this *ssnRedaction) clear() {
 	this.resetMatchValues()
 	this.start = 0

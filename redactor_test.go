@@ -4,7 +4,7 @@ import "testing"
 
 func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) {
 	inputByte := []byte(input)
-	actual := redaction.All(inputByte)
+	actual := redaction.RedactAll(inputByte)
 	if string(actual) == expected {
 		return
 	}
@@ -14,6 +14,38 @@ func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) 
 		"Actual:   %s",
 		expected,
 		actual,
+	)
+}
+func TestRedactPhone_ValidNumber(t *testing.T) {
+	t.Parallel()
+	redaction := New()
+	assertRedaction(t, redaction,
+		"801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"************ and (801) 111-1111 +1************* taco",
+	)
+	assertRedaction(t, redaction,
+		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
+		"Blah ************ and (801) 111-1111 +1************* taco",
+	)
+	assertRedaction(t, redaction,
+		"801-111-1111 +1(801)111-1111 taco",
+		"************ +1************* taco",
+	)
+}
+func TestRedactPhone_InvalidNumber(t *testing.T) {
+	t.Parallel()
+	redaction := New()
+	assertRedaction(t, redaction,
+		"40512-4618",
+		"40512-4618",
+	)
+	assertRedaction(t, redaction,
+		"405-124618",
+		"405-124618",
+	)
+	assertRedaction(t, redaction,
+		"This is not valid: 801 111 1111",
+		"This is not valid: 801 111 1111",
 	)
 }
 
@@ -116,34 +148,6 @@ func TestRedactEmail(t *testing.T) {
 	assertRedaction(t, redaction,
 		"Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
 		"Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
-	)
-}
-func TestRedactPhone(t *testing.T) {
-	t.Parallel()
-	redaction := New()
-	assertRedaction(t, redaction,
-		"801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"************ and (801) 111-1111 +1************* taco",
-	)
-	assertRedaction(t, redaction,
-		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"Blah ************ and (801) 111-1111 +1************* taco",
-	)
-	assertRedaction(t, redaction,
-		"40512-4618",
-		"40512-4618",
-	)
-	assertRedaction(t, redaction,
-		"405-124618",
-		"405-124618",
-	)
-	assertRedaction(t, redaction,
-		"This is not valid: 801 111 1111",
-		"This is not valid: 801 111 1111",
-	)
-	assertRedaction(t, redaction,
-		"801-111-1111 +1(801)111-1111 taco",
-		"************ +1************* taco",
 	)
 }
 func TestRedactSSN(t *testing.T) {

@@ -1,11 +1,5 @@
 package redact
 
-type emailRedaction struct {
-	*matched
-	start  int
-	length int
-}
-
 func (this *emailRedaction) match(input []byte) {
 	var maxEmailLength = 254
 	if len(input) <= 0 {

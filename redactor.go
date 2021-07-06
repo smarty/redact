@@ -1,32 +1,28 @@
 package redact
 
-type Redactor struct {
-	*matched
-	phone   *phoneRedaction
-	ssn     *ssnRedaction
-	credit  *creditCardRedaction
-	dob     *dobRedaction
-	email   *emailRedaction
-	monitor monitor
-}
+import "reflect"
 
-func (this *Redactor) All(input []byte) []byte {
-	this.clear()
-	this.credit.match(input)
-	this.email.match(input)
-	this.ssn.match(input)
-	this.phone.match(input)
-	this.dob.match(input)
+func (this *Redactor) RedactAll(input []byte) []byte {
+	this.clear(this.phone, this.email, this.dob, this.credit, this.ssn)
+	this.match(input, this.phone, this.email, this.dob, this.credit, this.ssn)
 	result := this.redactMatches(input)
 	return result
 }
-func (this *Redactor) clear() {
+
+func (this *Redactor) match(input []byte, matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		if !reflect.ValueOf(method).IsNil(){
+			method.match(input)
+		}
+	}
+}
+func (this *Redactor) clear(matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		if !reflect.ValueOf(method).IsNil(){
+			method.clear()
+		}
+	}
 	this.matched.clear()
-	this.credit.clear()
-	this.email.clear()
-	this.ssn.clear()
-	this.phone.clear()
-	this.dob.clear()
 }
 
 func (this *Redactor) redactMatches(input []byte) []byte {
@@ -58,29 +54,3 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 	return output
 }
 
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
-}
-
-type match struct {
-	InputIndex int
-	Length     int
-}
-type matched struct {
-	used    []bool
-	matches []match
-}
-
-func (this *matched) appendMatch(start, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
-	}
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
-}
-
-func (this *matched) clear() {
-	this.matches = this.matches[0:0]
-	for i := range this.used {
-		this.used[i] = false
-	}
-}

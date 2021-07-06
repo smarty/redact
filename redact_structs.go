@@ -1,5 +1,16 @@
 package redact
 
+type Redactor struct {
+	*matched
+	phone   *phoneRedaction
+	ssn     *ssnRedaction
+	credit  *creditCardRedaction
+	dob     *dobRedaction
+	email   *emailRedaction
+	monitor monitor
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 type phoneRedaction struct {
 	*matched
 	start       int
@@ -11,15 +22,31 @@ type phoneRedaction struct {
 	breakType   byte
 	isCandidate bool
 }
-type ssnRedaction struct {
+type emailRedaction struct {
 	*matched
-	start       int
-	length      int
-	numbers     int
-	breaks      bool
-	numBreaks   int
-	breakType   byte
-	isCandidate bool
+	start  int
+	length int
+}
+type dobRedaction struct {
+	*matched
+	start            int
+	length           int
+	isCandidate      bool
+	monthStart       int
+	monthLength      int
+	monthCandidate   bool
+	startChar        byte
+	totalGroupLength int
+	breaks           bool
+	numBreaks        int
+	breakType        byte
+	groupLength      int
+	firstDigit       byte
+	secondDigit      byte
+	thirdDigit       byte
+	fourthDigit      byte
+	validMonth       bool
+	validYear        bool
 }
 type creditCardRedaction struct {
 	*matched
@@ -35,35 +62,18 @@ type creditCardRedaction struct {
 	numGroups      int
 	breakType      byte
 }
-type emailRedaction struct {
+type ssnRedaction struct {
 	*matched
-	start  int
-	length int
-}
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
+	start       int
+	length      int
+	numbers     int
+	breaks      bool
+	numBreaks   int
+	breakType   byte
+	isCandidate bool
 }
 
-type Redactor struct {
-	*matched
-	phone   *phoneRedaction
-	ssn     *ssnRedaction
-	credit  *creditCardRedaction
-	dob     *dobRedaction
-	email   *emailRedaction
-	monitor monitor
-}
-type match struct {
-	InputIndex int
-	Length     int
-}
-type matched struct {
-	used    []bool
-	matches []match
-}
-func (this *matched) clear() {
-	this.matches = this.matches[0:0]
-	for i := range this.used {
-		this.used[i] = false
-	}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+func isNumeric(value byte) bool {
+	return value >= '0' && value <= '9'
 }

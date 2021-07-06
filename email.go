@@ -1,6 +1,5 @@
 package redact
 
-
 func (this *emailRedaction) match(input []byte) {
 	var maxEmailLength = 254
 	if len(input) <= 0 {

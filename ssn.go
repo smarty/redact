@@ -1,6 +1,5 @@
 package redact
 
-
 func (this *ssnRedaction) clear() {
 	this.resetMatchValues()
 	this.start = 0

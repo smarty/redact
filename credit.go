@@ -1,6 +1,5 @@
 package redact
 
-
 func (this *creditCardRedaction) clear() {
 	this.resetMatchValues()
 	this.lastDigitIndex = 0

@@ -1,6 +1,6 @@
 package redact
 
-type Redaction interface{
+type Redaction interface {
 	match([]byte)
 	clear()
 }

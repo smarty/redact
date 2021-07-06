@@ -4,7 +4,7 @@ import "testing"
 
 func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) {
 	inputByte := []byte(input)
-	actual := redaction.All(inputByte)
+	actual := redaction.RedactAll(inputByte)
 	if string(actual) == expected {
 		return
 	}
@@ -17,24 +17,12 @@ func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) 
 	)
 }
 
-func TestRedactCreditCard(t *testing.T) {
+func TestRedactCreditCard_Valid(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
 		"",
 		"",
-	)
-	assertRedaction(t, redaction,
-		"523d0555760656D3FC1D315E8",
-		"523d0555760656D3FC1D315E8",
-	)
-	assertRedaction(t, redaction,
-		"4111 1111 1111 11 10 111",
-		"4111 1111 1111 11 10 111",
-	)
-	assertRedaction(t, redaction,
-		"4111 1111 1111 1110-111",
-		"4111 1111 1111 1110-111",
 	)
 	assertRedaction(t, redaction,
 		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
@@ -49,18 +37,6 @@ func TestRedactCreditCard(t *testing.T) {
 		"******************* ",
 	)
 	assertRedaction(t, redaction,
-		"1234-1234-1243-1234 ",
-		"1234-1234-1243-1234 ",
-	)
-	assertRedaction(t, redaction,
-		"4011111111111101111",
-		"4011111111111101111",
-	)
-	assertRedaction(t, redaction,
-		"6011-0o09-9013-9424 ",
-		"6011-0o09-9013-9424 ",
-	)
-	assertRedaction(t, redaction,
 		"3714-496353-98431 - O ",
 		"***************** - O ",
 	)
@@ -73,14 +49,6 @@ func TestRedactCreditCard(t *testing.T) {
 		"taco *******************",
 	)
 	assertRedaction(t, redaction,
-		"6011 0009 9013  9424 taco.",
-		"6011 0009 9013  9424 taco.",
-	)
-	assertRedaction(t, redaction,
-		"423432343 111110101     ",
-		"423432343 111110101     ",
-	)
-	assertRedaction(t, redaction,
 		"4111111111111101111TEST",
 		"*******************TEST",
 	)
@@ -88,6 +56,42 @@ func TestRedactCreditCard(t *testing.T) {
 		"411 1111 1111 1110 1111ST",
 		"***********************ST",
 	)
+}
+func TestRedactCreditCard_Invalid(t *testing.T) {
+	t.Parallel()
+	redaction := New()
+	assertRedaction(t, redaction,
+		"6011 0009 9013  9424 taco.",
+		"6011 0009 9013  9424 taco.",
+	)
+	assertRedaction(t, redaction,
+		"423432343 111110101     ",
+		"423432343 111110101     ",
+	)
+	assertRedaction(t, redaction,
+		"523d0555760656D3FC1D315E8",
+		"523d0555760656D3FC1D315E8",
+	)
+	assertRedaction(t, redaction,
+		"4111 1111 1111 11 10 111",
+		"4111 1111 1111 11 10 111",
+	)
+	assertRedaction(t, redaction,
+		"4111 1111 1111 1110-111",
+		"4111 1111 1111 1110-111",
+	)
+	assertRedaction(t, redaction,
+		"1234-1234-1243-1234 ",
+		"1234-1234-1243-1234 ",
+	)
+	assertRedaction(t, redaction,
+		"4011111111111101111",
+		"4011111111111101111",
+	)
+	assertRedaction(t, redaction,
+		"6011-0o09-9013-9424 ",
+		"6011-0o09-9013-9424 ",
+	)
 	assertRedaction(t, redaction,
 		"+41 11 111 11 0",
 		"+41 11 111 11 0",
@@ -108,17 +112,26 @@ func TestRedactCreditCard(t *testing.T) {
 			"992144713703560551680141615000380747919129581233295746609790127688737740588379751",
 	)
 }
-func TestRedactEmail(t *testing.T) {
+
+func TestRedactEmail_Valid(t *testing.T) {
 	t.Parallel()
-
 	redaction := New()
-
 	assertRedaction(t, redaction,
 		"Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
 		"Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
 	)
 }
-func TestRedactPhone(t *testing.T) {
+func TestRedactEmail_Invalid(t *testing.T) {
+	t.Parallel()
+	redaction := New()
+	assertRedaction(t, redaction,
+		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
+		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
+	)
+	//TODO: Test for multiple '@' in email
+}
+
+func TestRedactPhone_Valid(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -130,27 +143,30 @@ func TestRedactPhone(t *testing.T) {
 		"Blah ************ and (801) 111-1111 +1************* taco",
 	)
 	assertRedaction(t, redaction,
-		"40512-4618",
-		"40512-4618",
-	)
-	assertRedaction(t, redaction,
-		"405-124618",
-		"405-124618",
-	)
-	assertRedaction(t, redaction,
-		"This is not valid: 801 111 1111",
-		"This is not valid: 801 111 1111",
-	)
-	assertRedaction(t, redaction,
 		"801-111-1111 +1(801)111-1111 taco",
 		"************ +1************* taco",
 	)
 }
-func TestRedactSSN(t *testing.T) {
+func TestRedactPhone_Invalid(t *testing.T) {
 	t.Parallel()
-
 	redaction := New()
+	assertRedaction(t, redaction,
+		"40512-4618",
+		"40512-4618",
+	)
+	assertRedaction(t, redaction,
+		"405-124618",
+		"405-124618",
+	)
+	assertRedaction(t, redaction,
+		"This is not valid: 801 111 1111",
+		"This is not valid: 801 111 1111",
+	)
+}
 
+func TestRedactSSN_Valid(t *testing.T) {
+	t.Parallel()
+	redaction := New()
 	assertRedaction(t, redaction,
 		"Blah 123-12-1234.",
 		"Blah ***********.",
@@ -159,6 +175,10 @@ func TestRedactSSN(t *testing.T) {
 		"123 12 1234 taco",
 		"*********** taco",
 	)
+}
+func TestRedactSSN_Invalid(t *testing.T) {
+	t.Parallel()
+	redaction := New()
 	assertRedaction(t, redaction,
 		" 123-121234 taco",
 		" 123-121234 taco",
@@ -169,23 +189,14 @@ func TestRedactSSN(t *testing.T) {
 	)
 
 }
-func TestRedactDOB(t *testing.T) {
-	t.Parallel()
 
+func TestRedactDOB_Valid(t *testing.T) {
+	t.Parallel()
 	redaction := New()
-	assertRedaction(t, redaction,
-		" Apr 39 ",
-		" Apr 39 ",
-	)
 	assertRedaction(t, redaction,
 		"APRIL 3, 2019",
 		"******** 2019",
 	)
-	assertRedaction(t, redaction,
-		" 7/13/2023",
-		" 7/13/2023",
-	)
-
 	assertRedaction(t, redaction,
 		"1982/11/8",
 		"*********",
@@ -201,6 +212,18 @@ func TestRedactDOB(t *testing.T) {
 	assertRedaction(t, redaction,
 		" February 1, 2020",
 		" *********** 2020",
+	)
+}
+func TestRedactDOB_Invalid(t *testing.T) {
+	t.Parallel()
+	redaction := New()
+	assertRedaction(t, redaction,
+		" Apr 39 ",
+		" Apr 39 ",
+	)
+	assertRedaction(t, redaction,
+		" 7/13/2023",
+		" 7/13/2023",
 	)
 	assertRedaction(t, redaction,
 		"30-12-12",

@@ -11,9 +11,6 @@ func (this *dobRedaction) clear() {
 func (this *dobRedaction) match(input []byte) {
 	this.resetYearValues()
 	this.startChar = 'x'
-	if len(input) <= 0 {
-		return
-	}
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
 		if i > len(this.used)-1 {

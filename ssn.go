@@ -6,9 +6,6 @@ func (this *ssnRedaction) clear() {
 }
 
 func (this *ssnRedaction) match(input []byte) {
-	if len(input) <= 0 {
-		return
-	}
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
 		if i > len(this.used)-1 {

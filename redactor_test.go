@@ -117,8 +117,8 @@ func TestRedactEmail_Valid(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"Blah test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
-		"Blah ****@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
+		"Blah test.test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
+		"Blah *********@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
 	)
 }
 func TestRedactEmail_Invalid(t *testing.T) {

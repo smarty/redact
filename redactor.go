@@ -2,21 +2,12 @@ package redact
 
 func (this *Redactor) RedactAll(input []byte) []byte {
 	this.clear(this.phone, this.email, this.dob, this.credit, this.ssn)
+	if len(input) <= 0 {
+		return input
+	}
 	this.match(input, this.phone, this.email, this.dob, this.credit, this.ssn)
 	result := this.redactMatches(input)
 	return result
-}
-
-func (this *Redactor) match(input []byte, matchMethod ...Redaction) {
-	for _, method := range matchMethod {
-		method.match(input)
-	}
-}
-func (this *Redactor) clear(matchMethod ...Redaction) {
-	for _, method := range matchMethod {
-		method.clear()
-	}
-	this.matched.clear()
 }
 
 func (this *Redactor) redactMatches(input []byte) []byte {
@@ -46,4 +37,16 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 
 	output := buffer
 	return output
+}
+
+func (this *Redactor) match(input []byte, matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		method.match(input)
+	}
+}
+func (this *Redactor) clear(matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		method.clear()
+	}
+	this.matched.clear()
 }

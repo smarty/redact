@@ -2,7 +2,7 @@ package redact
 
 type Redactor struct {
 	*matched
-	phone   *phoneRedaction
+	phone   *phoneRedaction // FIXME: Could we seperate these into it's own struct?
 	ssn     *ssnRedaction
 	credit  *creditCardRedaction
 	dob     *dobRedaction

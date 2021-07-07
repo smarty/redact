@@ -7,9 +7,6 @@ func (this *creditCardRedaction) clear() {
 }
 
 func (this *creditCardRedaction) match(input []byte) {
-	if len(input) <= 0 {
-		return
-	}
 	for i := len(input) - 1; i > 0; i-- {
 		character := input[i]
 		if !isNumeric(input[i]) {

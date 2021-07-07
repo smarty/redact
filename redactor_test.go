@@ -184,6 +184,10 @@ func TestRedactSSN_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"",
+		"",
+	)
+	assertRedaction(t, redaction,
 		" 123-121234 taco",
 		" 123-121234 taco",
 	)

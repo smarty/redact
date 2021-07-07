@@ -13,7 +13,7 @@ func (this *Redactor) RedactAll(input []byte) []byte {
 func (this *Redactor) redactMatches(input []byte) []byte {
 	count := len(this.matches)
 	if count == 0 {
-		return input // no changes to redact
+		return input
 	}
 	this.monitor.Redacted(count)
 

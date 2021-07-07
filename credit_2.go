@@ -1,9 +1,12 @@
 package redact
-//TODO: Create testing... I have no idea if this would work
+
+import "strings"
+
 type creditCardRedact struct {
 	*matched
-	lastDigitIndex int //when did the value begin? --> Do we need to check for multiple credit cards? I guess that would be in appeneded matches..
+	lastDigitIndex int
 	value          []byte
+	breakType      byte
 }
 
 func (this *creditCardRedact) match(input []byte) {
@@ -14,22 +17,21 @@ func (this *creditCardRedact) match(input []byte) {
 	for i := 0; i < len(input); i++ {
 		character := input[i]
 
-		if isNumeric(character) {
+		if isInterestingValue(character, input, i) {
 			this.value = append(this.value, character)
 
-			if len(this.value) == 1{
+			if len(this.value) == 1 {
 				this.lastDigitIndex = i - 1
 			}
-
-			if !isNumeric(input[i+1]) && !luhn(string(this.value[:])) {
+			if !isInterestingValue(character, input, i) && !luhn(stripBreaks(this.value)) {
 				this.value = nil
-			} else if luhn(string(this.value[:])){
+			} else if !isNumeric(input[i+1]) && luhn(string(this.value[:])) {
 				this.appendMatch(this.lastDigitIndex, len(this.value))
+				this.value = nil
 			}
 		}
 	}
 }
-
 
 func luhn(CardNumber string) bool {
 	odd := len(CardNumber) & 1
@@ -48,3 +50,21 @@ func luhn(CardNumber string) bool {
 }
 
 var t = [...]int{0, 2, 4, 6, 8, 1, 3, 5, 7, 9}
+
+func isInterestingValue(value byte, input []byte, i int) bool{
+	interesting := false
+	if value >= '0' && value <= '9'{
+		interesting = true
+	}
+	if (value == ' ' || value == '-') && (input[i - 1] >= '0' && input[i - 1] <='9'){
+		interesting = true
+	}
+	return interesting
+}
+
+func stripBreaks(input []byte) string {
+	returnString := string(input[:])
+	strings.ReplaceAll(returnString, " ", "")
+	strings.ReplaceAll(returnString, "-", "")
+	return returnString
+}

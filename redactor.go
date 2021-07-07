@@ -8,11 +8,14 @@ type Redactor struct {
 	dob     *dobRedaction
 	email   *emailRedaction
 	monitor monitor
+	//credit *creditCardRedact
 }
 
 func (this *Redactor) All(input []byte) []byte {
 	this.clear()
 	this.credit.match(input)
+	//this is your added method
+	//this.credit.match(input)
 	this.email.match(input)
 	this.ssn.match(input)
 	this.phone.match(input)
@@ -37,7 +40,6 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 	this.monitor.Redacted(count)
 
 	buffer := input
-	bufferLength := len(buffer)
 	var lowIndex, highIndex int
 
 	for _, match := range this.matches {
@@ -46,7 +48,7 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 		if lowIndex < 0 {
 			continue
 		}
-		if highIndex > bufferLength {
+		if highIndex > len(buffer) {
 			continue
 		}
 		for ; lowIndex < highIndex; lowIndex++ {

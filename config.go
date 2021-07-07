@@ -23,6 +23,7 @@ func New(options ...option) *Redactor {
 		matched: matched,
 		phone:   &phoneRedaction{matched: matched},
 		ssn:     &ssnRedaction{matched: matched},
+		//credit:  &creditCardRedaction{matched: matched},
 		credit:  &creditCardRedaction{matched: matched},
 		dob:     &dobRedaction{matched: matched},
 		email:   &emailRedaction{matched: matched},

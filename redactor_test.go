@@ -17,7 +17,7 @@ func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) 
 	)
 }
 
-func TestRedactCreditCard_Valid(t *testing.T) {
+func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -57,7 +57,7 @@ func TestRedactCreditCard_Valid(t *testing.T) {
 		"***********************ST",
 	)
 }
-func TestRedactCreditCard_Invalid(t *testing.T) {
+func TestRedactCreditCard_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -113,7 +113,7 @@ func TestRedactCreditCard_Invalid(t *testing.T) {
 	)
 }
 
-func TestRedactEmail_Valid(t *testing.T) {
+func TestRedactEmail_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -121,7 +121,7 @@ func TestRedactEmail_Valid(t *testing.T) {
 		"Blah *********@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
 	)
 }
-func TestRedactEmail_Invalid(t *testing.T) {
+func TestRedactEmail_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -131,23 +131,27 @@ func TestRedactEmail_Invalid(t *testing.T) {
 	//TODO: Test for multiple '@' in email
 }
 
-func TestRedactPhone_Valid(t *testing.T) {
+func TestRedactPhone_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"+1(801)111-1111 taco",
+		"+************** taco",
+	)
+	assertRedaction(t, redaction,
 		"801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"************ and (801) 111-1111 +1************* taco",
+		"************ and (801) 111-1111 +************** taco",
 	)
 	assertRedaction(t, redaction,
 		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
-		"Blah ************ and (801) 111-1111 +1************* taco",
+		"Blah ************ and (801) 111-1111 +************** taco",
 	)
 	assertRedaction(t, redaction,
 		"801-111-1111 +1(801)111-1111 taco",
-		"************ +1************* taco",
+		"************ +************** taco",
 	)
 }
-func TestRedactPhone_Invalid(t *testing.T) {
+func TestRedactPhone_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -164,7 +168,7 @@ func TestRedactPhone_Invalid(t *testing.T) {
 	)
 }
 
-func TestRedactSSN_Valid(t *testing.T) {
+func TestRedactSSN_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -176,7 +180,7 @@ func TestRedactSSN_Valid(t *testing.T) {
 		"*********** taco",
 	)
 }
-func TestRedactSSN_Invalid(t *testing.T) {
+func TestRedactSSN_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -190,7 +194,7 @@ func TestRedactSSN_Invalid(t *testing.T) {
 
 }
 
-func TestRedactDOB_Valid(t *testing.T) {
+func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
@@ -214,7 +218,7 @@ func TestRedactDOB_Valid(t *testing.T) {
 		" *********** 2020",
 	)
 }
-func TestRedactDOB_Invalid(t *testing.T) {
+func TestRedactDOB_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,

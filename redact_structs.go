@@ -2,7 +2,7 @@ package redact
 
 type Redactor struct {
 	*matched
-	phone   *phoneRedaction // FIXME: Could we seperate these into it's own struct?
+	phone   *phoneRedaction // FIXME: Could we separate these into it's own struct?
 	ssn     *ssnRedaction
 	credit  *creditCardRedaction
 	dob     *dobRedaction
@@ -13,14 +13,10 @@ type Redactor struct {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 type phoneRedaction struct {
 	*matched
-	start       int
-	length      int
-	numbers     int
-	breaks      int
-	parenBreak  bool
-	matchBreaks bool
-	breakType   byte
-	isCandidate bool
+	start         int
+	length        int
+	breakLength   int
+	numericLength int
 }
 type emailRedaction struct {
 	*matched

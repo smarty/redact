@@ -1,165 +1,142 @@
 package redact
 
 func (this *dobRedaction) clear() {
-	this.resetMatchValues()
-	this.resetYearValues()
-	this.startChar = 'x'
+	this.start = 0
+	this.length = 0
+	this.numValues = 0
 	this.numBreaks = 0
-	this.breakType = 0
+	this.validMonthFound = false
 }
 
+/* Valid Dates:
+- Use a specific pattern (1/1/1111, 1111/1/1, Mar 3, 2222, etc.)
+	-11/11/1111, 1/1/1111, 1/11/1111, 11/1/1111
+	- Be careful with leap years, february will have more or less available days
+- Must be a valid date (months + days match up) year is not out of range/ within 100 year span
+- Must have at least 2 breaks, potentially 3
+	- A break may be: / , ' '
+- Months may come in all CAPS or all lowercase
+- May also have abbreviated months
+*/
+
+/* Months with 31 days
+- Jan, march, may, july, august, october, december
+
+  Months with 30 days
+- april, june, september, november
+
+  Weird months
+- February
+*/
 func (this *dobRedaction) match(input []byte) {
-	this.resetYearValues()
-	this.startChar = 'x'
-	for i := 0; i < len(input)-1; i++ {
-		character := input[i]
-		if i > len(this.used)-1 {
-			return
-		}
-		if this.used[i] {
+	for i := 0; i < len(input); i++ {
+		if i < len(this.used)-1 && this.used[i] {
 			continue
 		}
-		if !isNumeric(character) {
-			if validMonthFirstLetter(character) && this.startChar == 'x' {
-				this.startChar = character
-				this.monthStart = i
-			}
-			if this.isDOB() {
-				if this.groupLength == 2 && validDayDigit(this.firstDigit, this.secondDigit) && this.validMonth || this.groupLength == 4 {
-					if i != len(input)-1 && input[i+1] != this.breakType {
-						this.appendMatch(this.start, this.length)
-					}
-				}
-				this.start = i + 1
-				this.resetMatchValues()
-				continue
-			}
-			if this.numBreaks == 2 {
-				this.breaks = false
-			}
-			if character == ' ' {
-				if this.monthLength > 2 && isMonth(this.startChar, input[i-1], this.monthLength) {
-					this.monthCandidate = true
-					this.monthLength++
-					continue
-				} else {
-					this.resetMatchValues()
-				}
-			}
-			if dobBreakNotFound(character) || (i < len(input)-1 && doubleBreak(character, input[i+1])) {
-				if character == ',' && this.monthCandidate && this.groupLength <= 2 && this.groupLength != 0 {
-					this.appendMatch(this.monthStart, this.monthLength+this.length+1)
-					this.resetMatchValues()
-					continue
-				}
-				if this.startChar != 'x' && character != ' ' {
-					this.monthLength++
-				}
-				this.start = i + 1
-				this.length = 0
-				this.totalGroupLength = 0
-				this.breaks = false
-				this.isCandidate = false
-				this.groupLength = 0
-				this.numBreaks = 0
-				this.validMonth = false
-				this.monthCandidate = false
-				continue
-			}
-			this.monthStart = i + 1
-			this.monthLength = 0
-
-			if this.isCandidate {
-				this.length++
-			}
-			this.validDateCheck(character)
-			this.groupLength = 0
+		if isNumeric(input[i]) {
+			this.numValues++
+			this.length++
 			continue
 		}
-		this.totalGroupLength++
-		this.groupLength++
-
-		this.dateCalculator(character, i)
-
-		if this.length == 2 && this.monthCandidate && this.groupLength <= 2 {
-			if i < len(input)-1 {
-				if input[i+1] == ',' {
-					this.appendMatch(this.monthStart, this.monthLength+this.length+1)
-				}
+		if this.length > 8 && this.length < 11{
+			if this.numBreaks == 2 && this.validMonthFound {
+				this.appendMatch(this.start, this.length)
+				this.resetCount(i)
+				continue
 			}
-			this.resetMatchValues()
+		}
+		this.validateBreaks(input[i], i)
+		if !this.validateDOB(input[i-this.numValues : i]) {
+			this.resetCount(i)
+		}
+		if this.length > 11 {
+			this.resetCount(i)
 		}
 	}
+	if this.length >= 8 && this.length <= 10 && this.numBreaks == 2 && this.validMonthFound {
+		if this.validateDOB(input[this.length - this.numValues: this.length]){
+			this.appendMatch(this.start, this.length)
+		}
+	}
+}
 
-	if isNumeric(input[len(input)-1]) {
+func (this *dobRedaction) validateDOB(input []byte) bool {
+	this.numValues = 0
+	switch len(input) {
+	case 0:
+		return true
+	case 4:
+		return this.validateYear(input)
+ 	case 2:
+		return this.validateDate(input)
+	case 1:
+		if input[0] != '0' {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
+}
+func (this *dobRedaction) validateDate(input []byte) bool { //Valid day:
+	switch {
+	case input[0] == '0' && input[1] <= '9' && input[1] > 0:
+		this.validMonthFound = true
+		return true
+	case input[0] == '1' && input[1] <= '2':
+		this.validMonthFound = true
+		return true
+	case input[0] == '3' && input[1] > 1:
+		return false
+	default:
+		return false
+	}
+}
+func (this *dobRedaction) validateYear(input []byte) bool {
+	switch {
+	case input[0] == '1' && input[1] == '9':
+		return true
+	case input[0] == '2' && input[1] == '0' && input[2] < '3':
+		if input[2] == '2' && input[3] > '1' {
+			return false
+		}
+		return true
+	default:
+		return false
+	}
+	return false
+}
+
+func (this *dobRedaction) validateBreaks(input byte, i int) {
+	switch {
+	case input == '/':
 		this.length++
-		this.totalGroupLength++
-		this.groupLength++
-		if this.groupLength == 4 {
-			this.fourthDigit = input[len(input)-1]
-			this.validYear = validYearDigit(this.firstDigit, this.secondDigit, this.thirdDigit, this.fourthDigit)
-		}
-	}
-	if this.isDOB() {
-		this.appendMatch(this.start, this.length)
-		this.resetMatchValues()
-	}
-}
-
-func (this *dobRedaction) dateCalculator(character uint8, i int) {
-	if this.firstDigit == 100 && this.groupLength < 3 {
-		this.firstDigit = character
-	} else {
-		if this.groupLength == 2 {
-			this.secondDigit = character
-		}
-	}
-	if this.groupLength == 3 {
-		this.thirdDigit = character
-	}
-	if this.groupLength == 4 {
-		this.fourthDigit = character
-		this.validYear = validYearDigit(this.firstDigit, this.secondDigit, this.thirdDigit, this.fourthDigit)
-		this.resetYearValues()
-	}
-	if this.isCandidate || this.monthCandidate {
+		this.numBreaks++
+	case input == '-':
 		this.length++
-	} else {
-		this.isCandidate = true
-		this.breakType = 'x'
-		this.start = i
-		this.breaks = false
-		this.length++
+		this.numBreaks++
+	case this.numBreaks > 2:
+		this.resetCount(i)
+	default:
+		this.resetCount(i)
 	}
 }
 
-func dobBreakNotFound(character byte) bool {
-	return character != '/' && character != '-'
+func (this *dobRedaction) resetCount(i int) {
+	this.start = i + 1
+	this.length = 0
+	this.numBreaks = 0
+	this.numValues = 0
+	this.validMonthFound = false
 }
 
-func (this *dobRedaction) isDOB() bool {
-	return this.totalGroupLength >= 6 && this.totalGroupLength <= 8 && this.breaks && this.numBreaks == 2 && this.validYear
-}
+/*
+// MINIMUM: 2
+// MAXIMUM: 43
+ 1 - 12 ** months
+ 1 - 31 ** days
+*/
 
-func (this *dobRedaction) validDateCheck(character uint8) {
-	if this.firstDigit == '1' && this.secondDigit <= '2' && this.groupLength != 4 {
-		this.validMonth = true
-	}
-	if validDayDigit(this.firstDigit, this.secondDigit) || (this.totalGroupLength == 4 && this.validYear) {
-		if character == this.breakType && validGroupLength(this.groupLength) {
-			this.breaks = true
-			this.numBreaks++
-		}
-		if validGroupLength(this.groupLength) && this.totalGroupLength < 3 || this.validYear && !this.breaks {
-			this.breakType = character
-			this.numBreaks++
-		}
-		if this.secondDigit == 100 && this.groupLength != 4 {
-			this.validMonth = true
-		}
-		this.resetYearValues()
-	}
-}
 func validDayDigit(first, last byte) bool {
 	if last == 100 {
 		return true
@@ -212,31 +189,6 @@ func isMonth(first, last byte, length int) bool {
 		}
 	}
 	return false
-}
-func doubleBreak(character, next byte) bool {
-	return !dobBreakNotFound(character) && !dobBreakNotFound(next)
-}
-
-func (this *dobRedaction) resetYearValues() {
-	this.firstDigit = 100
-	this.secondDigit = 100
-	this.thirdDigit = 100
-	this.fourthDigit = 100
-}
-func (this *dobRedaction) resetMatchValues() {
-	this.start = 0
-	this.length = 0
-	this.isCandidate = false
-	this.monthStart = 0
-	this.monthLength = 0
-	this.monthCandidate = false
-	this.totalGroupLength = 0
-	this.breaks = false
-	this.groupLength = 0
-	this.firstDigit = 100
-	this.secondDigit = 100
-	this.validMonth = false
-	this.validYear = false
 }
 
 var (

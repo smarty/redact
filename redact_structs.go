@@ -18,31 +18,11 @@ type phoneRedaction struct {
 	breakLength   int
 	numericLength int
 }
-type emailRedaction struct {
+type ssnRedaction struct {
 	*matched
-	start  int
-	length int
-}
-type dobRedaction struct {
-	*matched
-	start            int
-	length           int
-	isCandidate      bool
-	monthStart       int
-	monthLength      int
-	monthCandidate   bool
-	startChar        byte
-	totalGroupLength int
-	breaks           bool
-	numBreaks        int
-	breakType        byte
-	groupLength      int
-	firstDigit       byte
-	secondDigit      byte
-	thirdDigit       byte
-	fourthDigit      byte
-	validMonth       bool
-	validYear        bool
+	start       int
+	length      int
+	breakLength int
 }
 type creditCardRedaction struct {
 	*matched
@@ -58,11 +38,18 @@ type creditCardRedaction struct {
 	numGroups      int
 	breakType      byte
 }
-type ssnRedaction struct {
+type dobRedaction struct {
 	*matched
-	start       int
-	length      int
-	breakLength int
+	start           int
+	length          int
+	numBreaks       int
+	numValues       int
+	validMonthFound bool
+}
+type emailRedaction struct {
+	*matched
+	start  int
+	length int
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

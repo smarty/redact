@@ -184,10 +184,6 @@ func TestRedactSSN_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"",
-		"",
-	)
-	assertRedaction(t, redaction,
 		" 123-121234 taco",
 		" 123-121234 taco",
 	)
@@ -202,16 +198,16 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"APRIL 3, 2019",
-		"******** 2019",
+		"Blah 12-01-1998 and 12/01/1998 ",
+		"Blah ********** and ********** ",
 	)
 	assertRedaction(t, redaction,
 		"1982/11/8",
 		"*********",
 	)
 	assertRedaction(t, redaction,
-		"Blah 12-01-1998 and 12/01/1998 ",
-		"Blah ********** and ********** ",
+		"APRIL 3, 2019",
+		"******** 2019",
 	)
 	assertRedaction(t, redaction,
 		"Jan 1, 2021",
@@ -238,8 +234,8 @@ func TestRedactDOB_Invalid_NoRedaction(t *testing.T) {
 		"30-12-12",
 	)
 	assertRedaction(t, redaction,
-		"1/12/21",
-		"1/12/21",
+		"1/12/2121",
+		"1/12/2121",
 	)
 	assertRedaction(t, redaction,
 		"[5-4-212/80]",

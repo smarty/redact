@@ -3,6 +3,7 @@ package redact
 func (this *ssnRedaction) clear() {
 	this.start = 0
 	this.length = 0
+	this.breakLength = 0
 }
 func (this *ssnRedaction) match(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
@@ -28,6 +29,12 @@ func (this *ssnRedaction) match(input []byte) {
 	}
 }
 
+func (this *ssnRedaction) resetCount(i int) {
+	this.start = i + 1
+	this.length = 0
+	this.breakLength = 0
+}
+
 func (this *ssnRedaction) validateMatch(testMatch []byte) {
 	switch {
 	case testMatch[MinSSNBreakPosition] == '-' && testMatch[MaxSSNBreakPosition] == '-':
@@ -36,7 +43,6 @@ func (this *ssnRedaction) validateMatch(testMatch []byte) {
 		this.appendMatch(this.start, this.length)
 	}
 }
-
 func (this *ssnRedaction) validateBreaks(input byte, i int) {
 	switch {
 	case input == ' ' && this.length >= 3:
@@ -48,9 +54,4 @@ func (this *ssnRedaction) validateBreaks(input byte, i int) {
 	default:
 		this.resetCount(i)
 	}
-}
-func (this *ssnRedaction) resetCount(i int) {
-	this.start = i + 1
-	this.length = 0
-	this.breakLength = 0
 }

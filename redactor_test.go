@@ -16,7 +16,19 @@ func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) 
 		actual,
 	)
 }
-
+func BenchmarkThing(b *testing.B) {
+	// do initialization out here
+	redaction := New()
+	b.ReportAllocs()
+	b.ResetTimer()
+	input := []byte("Blah test.test@gmail.com, our employee's email is test@gmail. " +
+		"and we have one more which may or not be an email test@test taco " +
+		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ")
+	for n := 0; n < b.N; n++ {
+		// exercise the hot path here
+		_ = redaction.RedactAll(input)
+	}
+}
 func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()

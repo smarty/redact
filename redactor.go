@@ -5,7 +5,7 @@ func (this *Redactor) RedactAll(input []byte) []byte {
 	if len(input) <= 0 {
 		return input
 	}
-	this.match(input, this.phone, this.email,this.ssn, this.dob, this.credit)
+	this.match(input, this.phone, this.email, this.ssn, this.dob, this.credit)
 	result := this.redactMatches(input)
 	return result
 }

@@ -40,12 +40,10 @@ type creditCardRedaction struct {
 }
 type dobRedaction struct {
 	*matched
-	start             int
-	length            int
-	breakLength       int
-	numericLength     int
-	validNumericMonth bool
-	validMonth        bool
+	start         int
+	length        int
+	breakLength   int
+	numericLength int
 }
 type emailRedaction struct {
 	*matched

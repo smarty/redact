@@ -4,7 +4,7 @@ type Redactor struct {
 	*matched
 	phone   *phoneRedaction
 	ssn     *ssnRedaction
-	credit  *creditCardRedaction
+	credit  *creditCardRedact
 	dob     *dobRedaction
 	email   *emailRedaction
 	monitor monitor
@@ -13,7 +13,7 @@ type Redactor struct {
 
 func (this *Redactor) All(input []byte) []byte {
 	this.clear()
-	this.credit.match(input)
+	//TODO: ADD
 	//this is your added method
 	//this.credit.match(input)
 	this.email.match(input)
@@ -58,10 +58,6 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 
 	output := buffer
 	return output
-}
-
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
 }
 
 type match struct {

@@ -1,31 +1,71 @@
 package redact
 
-type phoneRedaction struct {
-	*matched
-	start       int
-	length      int
-}
-
 func (this *phoneRedaction) clear() {
-	this.start = 0
 	this.length = 0
+	this.start = 0
+	this.breakLength = 0
+	this.numericLength = 0
 }
-
 func (this *phoneRedaction) match(input []byte) {
-	if len(input) <= 0 {
-		return
-	}
+
 	for i := 0; i < len(input)-1; i++ {
-		if i < len(this.used) && this.used[i] {
+		if i < len(this.used)-1 && this.used[i] {
 			continue
 		}
-		character := input[i]
 
-		switch character{
-		case '+':
-			switch input[i+ 1] {
-			case
-
+		if isNumeric(input[i]) {
+			this.numericLength++
+			this.length++
+			switch {
+			case this.length < MaxPhoneLength_WithBreaks && this.numericLength != MinPhoneLength_WithNoBreaks:
+				continue
+			case this.length >= MinPhoneLength_WithNoBreaks && this.length <= MaxPhoneLength_WithBreaks && this.breakLength <= MaxPhoneBreakLength:
+				this.validateMatch(input[this.start : this.start+this.length])
 			}
+			if i < len(input)-1 {
+				this.resetCount(i)
+			}
+			continue
 		}
-	}}
+		if i < len(input)-1 {
+			this.validateBreaks(input[i], i)
+		}
+	}
+}
+
+func (this *phoneRedaction) resetCount(i int) {
+	this.start = i + 1
+	this.length = 0
+	this.breakLength = 0
+	this.numericLength = 0
+}
+func (this *phoneRedaction) validateBreaks(input byte, i int) {
+	switch input {
+	case '-':
+		this.length++
+		this.breakLength++
+	case '(':
+		this.length++
+		this.breakLength++
+	case ')':
+		this.length++
+		this.breakLength++
+	case '+':
+		this.start = i + 1
+		this.length++
+	default:
+		this.resetCount(i)
+	}
+}
+func (this *phoneRedaction) validateMatch(testMatch []byte) {
+	switch {
+	case this.length == MinPhoneLength_WithBreaks && this.breakLength == MinPhoneBreakLength:
+		if testMatch[3] == '-' && testMatch[7] == '-' {
+			this.appendMatch(this.start, this.length)
+		}
+	case this.length == MaxPhoneLength_WithBreaks && this.breakLength == MaxPhoneBreakLength:
+		if testMatch[1] == '(' && testMatch[5] == ')' && testMatch[9] == '-' {
+			this.appendMatch(this.start, this.length)
+		}
+	}
+}

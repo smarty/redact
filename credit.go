@@ -4,30 +4,55 @@ func (this *creditCardRedact) match(input []byte) {
 	if len(input) <= 0 {
 		return
 	}
-
-	//input := 'Hi, my name is 24601 Caroline. I like to sing 4024007103939509 in choirs.'
-	//First, take a character and check to see if you care about it. (if it is a number or a break)
-	//Second, if you do add it to the overall value
-	// --> Go look at Savannah's reset
-	// third check to see if the value passes the luhn algorithm?
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-
-		if this.isInterestingValue(character) {
+		if !isInterestingCharacter(character) || !isNumeric(character){
+			this.reset(i)
+			continue
+		} else if isNumeric(character) {
 			this.length++
-			this.value = append(this.value, character)
+			this.numericLength++
+
+			if this.numericLength > 19{
+				continue
+				this.reset(i)
+			}
 
 			if this.length == 1{
 				this.lastDigitIndex = i
 			}
-			continue
+			//this.value will only hold the bytes in a []byte
+			this.value = append(this.value, character)
+		} else if isInterestingCharacter(character) && this.breakType == byte(0){
+			this.length++
+			this.breakType = character
+		} else if character != this.breakType {
+			this.reset(i)
+		} else if character == this.breakType {
+			this.length++
 		}
-		//if luhn(this.value){
-		//	this.appendMatch(this.lastDigitIndex, len(this.value))
-		//	this.resetValues(i)
-		//}
 	}
-	this.appendMatch(this.lastDigitIndex, len(this.value))
+	this.appendMatch(this.lastDigitIndex, this.length)
+}
+func isInterestingCharacter(character byte) bool {
+	interesting := false
+	switch character {
+	case ' ':
+		interesting = true
+	case '-':
+		interesting = true
+	default:
+		return interesting
+	}
+	return interesting
+}
+
+func(this *creditCardRedact) reset(i int){
+	this.length = 0
+	this.lastDigitIndex = i + 1
+	this.value = nil
+	this.numericLength = 0
+	this.breakType = byte(0)
 }
 
 func luhn(CardNumber []byte) bool {
@@ -44,25 +69,6 @@ func luhn(CardNumber []byte) bool {
 		}
 	}
 	return sum%10 == 0
-}
-
-func (this *creditCardRedact) isInterestingValue(value byte) bool {
-	interesting := false
-	switch {
-	case value == '-':
-		interesting = true
-	case value == ' ':
-		interesting = true
-	case isNumeric(value):
-		interesting = true
-	}
-	return interesting
-}
-
-func (this *creditCardRedact) resetValues(i int) {
-	this.value = nil
-	this.lastDigitIndex = i + 1
-	this.length = 0
 }
 
 var t = [...]int{0, 2, 4, 6, 8, 1, 3, 5, 7, 9}

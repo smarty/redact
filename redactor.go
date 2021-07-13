@@ -13,8 +13,6 @@ type Redactor struct {
 
 func (this *Redactor) All(input []byte) []byte {
 	this.clear()
-	//TODO: ADD
-	//this is your added method
 	this.credit.match(input)
 	this.email.match(input)
 	this.ssn.match(input)

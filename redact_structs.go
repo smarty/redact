@@ -30,6 +30,8 @@ type creditCardRedact struct {
 	lastDigitIndex int
 	value          []byte
 	length         int
+	numericLength  int
+	breakType      byte
 }
 
 type dobRedaction2 struct {

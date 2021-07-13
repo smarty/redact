@@ -29,7 +29,7 @@ type creditCardRedact struct {
 	*matched
 	lastDigitIndex int
 	value          []byte
-	breakType      byte
+	length         int
 }
 
 type dobRedaction2 struct {

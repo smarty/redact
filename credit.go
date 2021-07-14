@@ -6,9 +6,10 @@ func (this *creditCardRedact) match(input []byte) {
 	}
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-		if !isInterestingCharacter(character) || !isNumeric(character){
+		if !isInterestingCharacter(character) && !isNumeric(character){
 			this.reset(i)
 			continue
+			//else if is very redundant
 		} else if isNumeric(character) {
 			this.length++
 			this.numericLength++
@@ -31,8 +32,11 @@ func (this *creditCardRedact) match(input []byte) {
 		} else if character == this.breakType {
 			this.length++
 		}
+		if luhn(this.value){
+			this.appendMatch(this.lastDigitIndex, this.length)
+			this.reset(i)
+		}
 	}
-	this.appendMatch(this.lastDigitIndex, this.length)
 }
 func isInterestingCharacter(character byte) bool {
 	interesting := false

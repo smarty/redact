@@ -30,6 +30,7 @@ type creditCardRedaction struct {
 	length   int
 	isSecond bool
 	totalSum byte
+	creditCardNumber []byte
 }
 type dobRedaction struct {
 	*matched

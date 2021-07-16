@@ -1,12 +1,15 @@
 package redact
-
 func (this *creditCardRedact) match(input []byte) {
 	if len(input) <= 0 {
 		return
 	}
 	for i := 0; i < len(input)-1; i++ {
 		character := input[i]
-		if !isInterestingCharacter(character) && !isNumeric(character){
+		if this.length == 0 && !isNumeric(character) {
+			this.reset(i)
+			continue
+		}
+		if !isInterestingCharacter(character) && !isNumeric(character) {
 			this.reset(i)
 			continue
 			//else if is very redundant
@@ -14,17 +17,18 @@ func (this *creditCardRedact) match(input []byte) {
 			this.length++
 			this.numericLength++
 
-			if this.numericLength > 19{
-				continue
+			if this.numericLength > 19 {
 				this.reset(i)
+				continue
 			}
 
-			if this.length == 1{
+			if this.length == 1 {
 				this.lastDigitIndex = i
 			}
 			//this.value will only hold the bytes in a []byte
 			this.value = append(this.value, character)
-		} else if isInterestingCharacter(character) && this.breakType == byte(0){
+			//else is here is redundant
+		} else if isInterestingCharacter(character) && this.breakType == byte(0) {
 			this.length++
 			this.breakType = character
 		} else if character != this.breakType {
@@ -32,11 +36,12 @@ func (this *creditCardRedact) match(input []byte) {
 		} else if character == this.breakType {
 			this.length++
 		}
-		if luhn(this.value){
-			this.appendMatch(this.lastDigitIndex, this.length)
+		if this.numericLength >= 12 && this.numericLength <= 19 && luhn(this.value) {
+			this.appendMatch(this.lastDigitIndex, len(input[this.lastDigitIndex:(this.lastDigitIndex + this.length)])) //maybe add 1 to the i? the length is 23 but the i is 22? or just set it equal to the length you have been keeping track of
 			this.reset(i)
 		}
 	}
+	this.reset(0)
 }
 func isInterestingCharacter(character byte) bool {
 	interesting := false
@@ -51,7 +56,7 @@ func isInterestingCharacter(character byte) bool {
 	return interesting
 }
 
-func(this *creditCardRedact) reset(i int){
+func (this *creditCardRedact) reset(i int) {
 	this.length = 0
 	this.lastDigitIndex = i + 1
 	this.value = nil

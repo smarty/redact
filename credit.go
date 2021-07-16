@@ -34,10 +34,22 @@ func (this *creditCardRedact) match(input []byte) {
 		} else if character != this.breakType {
 			this.reset(i)
 		} else if character == this.breakType {
+			if input[i+1] == this.breakType{
+				this.reset(i)
+				continue
+			}
 			this.length++
 		}
-		if this.numericLength >= 12 && this.numericLength <= 19 && luhn(this.value) {
-			this.appendMatch(this.lastDigitIndex, len(input[this.lastDigitIndex:(this.lastDigitIndex + this.length)])) //maybe add 1 to the i? the length is 23 but the i is 22? or just set it equal to the length you have been keeping track of
+		if i == (len(input)-2) && isNumeric(input[i+1]){
+			this.value = append(this.value, input[i+1])
+			if luhn(this.value){
+				this.appendMatch(this.lastDigitIndex, len(input[this.lastDigitIndex:(this.lastDigitIndex + (this.length + 1))]))
+				this.reset(i)
+				continue
+			}
+		}
+		if this.numericLength >= 12 && this.numericLength <= 19 && luhn(this.value) && !isNumeric(input[i+1]) {
+			this.appendMatch(this.lastDigitIndex, len(input[this.lastDigitIndex:(this.lastDigitIndex + this.length)]))
 			this.reset(i)
 		}
 	}

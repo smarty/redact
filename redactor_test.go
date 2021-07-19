@@ -26,7 +26,7 @@ func BenchmarkThing(b *testing.B) {
 		"431impoletsgitit@yahoo.com. 4111-111-111-111-111 pasting 02/14/1900the " +
 		"647-21-12398 best of6011111111111117 the" +
 		"valid, and Jan 32, 1990someMarch 12, 2020 are not. 647489009 This is a vDecember 111, 2000ey fun task to do. " +
-		"647 40 4444 1+(801)4890464 647-48-9098")
+		"647 40 4444 1+(801)4890464 647-48-9012")
 	for n := 0; n < b.N; n++ {
 		_ = redaction.RedactAll(input)
 	}
@@ -34,6 +34,14 @@ func BenchmarkThing(b *testing.B) {
 func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
+	assertRedaction(t, redaction,
+		"taco 6011-0009-9013-9424",
+		"taco *******************",
+	)
+	assertRedaction(t, redaction,
+		"6011-0009-9013-9424 ",
+		"******************* ",
+	)
 	assertRedaction(t, redaction,
 		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
 		"*********************** *******************. taco ",
@@ -47,20 +55,12 @@ func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 		"*******************",
 	)
 	assertRedaction(t, redaction,
-		"6011-0009-9013-9424 ",
-		"******************* ",
-	)
-	assertRedaction(t, redaction,
-		"3714-496353-98431 - O ",
-		"***************** - O ",
+		"taco 3714-496353-98431 - O ",
+		"taco ***************** - O ",
 	)
 	assertRedaction(t, redaction,
 		"6011-0009-9013-9424 taco.",
 		"******************* taco.",
-	)
-	assertRedaction(t, redaction,
-		"taco 6011-0009-9013-9424",
-		"taco *******************",
 	)
 	assertRedaction(t, redaction,
 		"4111111111111101111TEST",

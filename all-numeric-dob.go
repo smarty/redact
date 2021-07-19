@@ -15,8 +15,8 @@ func (this *AllNumericDOB) findMatch(input []byte) {
 			this.redact.length++
 			continue
 		}
-		if this.redact.length > 8 && this.redact.length < 11 {
-			if this.redact.breakLength == 2 && this.validNumericMonth {
+		if this.redact.length > MinDOBLength_WithBreaks && this.redact.length < MaxDOBLength_WithBreaks {
+			if this.redact.breakLength == MaxDOBBreakLength && this.validNumericMonth {
 				this.redact.appendMatch(this.redact.start, this.redact.length)
 				this.resetCount(i)
 				continue
@@ -27,7 +27,7 @@ func (this *AllNumericDOB) findMatch(input []byte) {
 			this.resetCount(i)
 		}
 	}
-	if this.redact.length >= 8 && this.redact.length <= 10 && this.redact.breakLength == 2 && this.validNumericMonth {
+	if this.redact.length >= MinDOBLength_WithBreaks && this.redact.length <= 10 && this.redact.breakLength == MaxDOBBreakLength && this.validNumericMonth {
 		if this.validateDOB(input[this.redact.length-this.redact.numericLength : this.redact.length]) {
 			this.redact.appendMatch(this.redact.start, this.redact.length)
 			this.resetCount(0)

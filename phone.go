@@ -12,7 +12,6 @@ func (this *phoneRedaction) match(input []byte) {
 		if i < len(this.used)-1 && this.used[i] {
 			continue
 		}
-
 		if isNumeric(input[i]) {
 			this.numericLength++
 			this.length++

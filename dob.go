@@ -6,7 +6,6 @@ func (this *dobRedaction) clear() {
 	this.numericLength = 0
 	this.breakLength = 0
 }
-
 func (this *dobRedaction) match(input []byte) {
 	numericDOB := AllNumericDOB{redact: this}
 	fullDOB := FullDOB{redact: this}

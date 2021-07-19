@@ -2,7 +2,7 @@ package redact
 
 type Redactor struct {
 	*matched
-	phone   *phoneRedaction // FIXME: Could we separate these into it's own struct?
+	phone   *phoneRedaction
 	ssn     *ssnRedaction
 	credit  *creditCardRedaction
 	dob     *dobRedaction
@@ -26,12 +26,11 @@ type ssnRedaction struct {
 }
 type creditCardRedaction struct {
 	*matched
-	start        int
-	length       int
-	isSecond     bool
-	totalSum     uint64
-	breakLength  int
-	validNetwork bool
+	start       int
+	length      int
+	isSecond    bool
+	totalSum    uint64
+	breakLength int
 }
 type dobRedaction struct {
 	*matched
@@ -50,7 +49,6 @@ type emailRedaction struct {
 func isNumeric(value byte) bool {
 	return value >= '0' && value <= '9'
 }
-
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 const (
 	MaxEmailLength = 254
@@ -65,4 +63,13 @@ const (
 	MaxSSNBreakLength       = 2
 	MaxSSNBreakPosition     = 6
 	MinSSNBreakPosition     = 3
+
+	MinDOBLength_WithBreaks = 8
+	MaxDOBLength_WithBreaks = 11
+	MaxDOBBreakLength       = 2
+
+	MinCreditLength_NoBreaks = 12
+	MaxCreditLength_NoBreaks = 19
+	MaxCreditBreakLength     = 4
+	MinCreditBreakLength     = 2
 )

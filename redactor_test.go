@@ -23,8 +23,7 @@ func BenchmarkThing(b *testing.B) {
 	input := []byte("+8014890464 Hello 6749-3-2345 (801)4890464there, my name is stuff. 1200 East 1200 North Mapleton " +
 		"1(385)6668330. 18014890464 371449635398431numMayers 12, 1970ber is 647-48-6867. I " +
 		"9/1/2020 to fill these wo04/16/1999rds in with other 371 449 635 398 1945/05/01 " +
-		"431impoletsgitit@yahoo.com. 4111-111-111-111-111 pasting 02/14/1900the " +
-		"647-21-12398 best of6011111111111117 the" +
+		"431impoletsgitit@yahoo.com. 4111-111-111-111-111 pasting 02/14/1900the 647-21-12398 best of6011111111111117 the" +
 		"valid, and Jan 32, 1990someMarch 12, 2020 are not. 647489009 This is a vDecember 111, 2000ey fun task to do. " +
 		"647 40 4444 1+(801)4890464 647-48-9012")
 	for n := 0; n < b.N; n++ {

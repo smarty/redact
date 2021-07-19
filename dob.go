@@ -24,8 +24,6 @@ func (this *dobRedaction) validateYear(input []byte) bool {
 			return false
 		}
 		return true
-	default:
-		return false
 	}
 	return false
 }

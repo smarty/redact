@@ -48,8 +48,6 @@ func (this *AllNumericDOB) validateDOB(input []byte) bool {
 		if input[0] != '0' {
 			return true
 		}
-	default:
-		return false
 	}
 	return false
 }

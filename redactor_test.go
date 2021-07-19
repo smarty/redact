@@ -141,7 +141,6 @@ func TestRedactEmail_Invalid_NoRedaction(t *testing.T) {
 		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
 		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
 	)
-	//TODO: Test for multiple '@' in email
 }
 
 func TestRedactPhone_Valid_Redaction(t *testing.T) {
@@ -216,7 +215,7 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	)
 	assertRedaction(t, redaction,
 		"stuff February 1, 2020 ",
-		"stuff **************** ", // TODO: Check with no space at the end.
+		"stuff **************** ",
 	)
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",

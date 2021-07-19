@@ -26,11 +26,11 @@ type ssnRedaction struct {
 }
 type creditCardRedaction struct {
 	*matched
-	start            int
-	length           int
-	isSecond         bool
-	totalSum         uint64
-	creditCardNumber []byte
+	start       int
+	length      int
+	isSecond    bool
+	totalSum    uint64
+	breakLength int
 }
 type dobRedaction struct {
 	*matched

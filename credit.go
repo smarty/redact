@@ -7,36 +7,42 @@ func (this *creditCardRedaction) clear() {
 	this.isSecond = false
 }
 
-//Can be valid if there are letters at the very beginning or very end but NOT in the middle
-//The only valid breaks for a card are: ' ' and '-'
-//The breaks must be in the correct positions (i.e. 1010-1010-1010 1010, 1010-1010-0101-0, 0101-0101-0101-0101-010)
 func (this *creditCardRedaction) match(input []byte) {
 	for i := len(input) - 1; i > 0; i-- {
 		if i < len(this.used)-1 && this.used[i] {
 			continue
 		}
-
 		if isNumeric(input[i]) {
 			this.length++
 			this.start = i
 			this.luhnCheck(input[i])
 			continue
 		}
-		if i < len(input) - 1 && this.validateCard(input[i+1]){
+		if this.length > 0 && !this.validateBreaks(input[i]){
+			this.resetCount(i)
+			continue
+		}
+		if i < len(input)-1 && this.validateCard(input[i+1]) {
 			this.appendMatch(this.start, this.length)
 			this.resetCount(i)
+			continue
 		}
 	}
-if this.validateCard(input[this.start]){
-	this.appendMatch(this.start, this.length)
-}
+	if this.length != 0 && isNumeric(input[0]) {
+		this.length++
+		this.start--
+		this.luhnCheck(input[this.start])
+	}
+	if this.start >= 0 && this.validateCard(input[this.start]) {
+		this.appendMatch(this.start, this.length)
+	}
 }
 
 func (this *creditCardRedaction) luhnCheck(input byte) {
 	var value uint64
 	value = uint64(input - '0')
 
-	if this.isSecond{
+	if this.isSecond {
 		value *= 2
 	}
 	this.totalSum += value / 10
@@ -44,12 +50,15 @@ func (this *creditCardRedaction) luhnCheck(input byte) {
 	this.isSecond = !this.isSecond
 }
 
-func (this *creditCardRedaction) validateCard(input byte) bool{
-	if this.length > 19 || this.length < 12{
+func (this *creditCardRedaction) validateCard(input byte) bool {
+	if this.breakLength != 0 && (this.breakLength < 2 || this.breakLength > 4) {
 		return false
 	}
-
-	if !validateNetwork(input){
+	numericLength := this.length - this.breakLength
+	if numericLength > 19 || numericLength < 12 {
+		return false
+	}
+	if !validateNetwork(input) {
 		return false
 	}
 	return this.totalSum%10 == 0
@@ -62,4 +71,22 @@ func (this *creditCardRedaction) resetCount(i int) {
 	this.start = i - 1
 	this.length = 0
 	this.totalSum = 0
+	this.isSecond = false
+	this.breakLength = 0
+}
+
+//TODO: Should be boolean?
+func (this *creditCardRedaction) validateBreaks(input byte) bool {
+	switch {
+	case input == ' ':
+		this.breakLength++
+		this.length++
+		return true
+	case input == '-':
+		this.breakLength++
+		this.length++
+		return true
+	default:
+		return false
+	}
 }

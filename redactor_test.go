@@ -35,16 +35,16 @@ func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"4111111111111101111",
-		"*******************",
+		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
+		"*********************** *******************. taco ",
 	)
 	assertRedaction(t, redaction,
 		" 4111111111111101111 ",
 		" ******************* ",
 	)
 	assertRedaction(t, redaction,
-		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
-		"*********************** *******************. taco ",
+		"4111111111111101111",
+		"*******************",
 	)
 	assertRedaction(t, redaction,
 		"6011-0009-9013-9424 ",

@@ -13,19 +13,14 @@ func (this *creditCardRedact) match(input []byte) {
 			this.reset(i)
 			continue
 			//else if is very redundant
-		} else if isNumeric(character) {
+		}
+		if isNumeric(character) {
 			this.length++
 			this.numericLength++
-
-			if this.numericLength > 19 {
-				this.reset(i)
-				continue
-			}
 
 			if this.length == 1 {
 				this.lastDigitIndex = i
 			}
-			//this.value will only hold the bytes in a []byte
 			this.value = append(this.value, character)
 			//else is here is redundant
 		} else if isInterestingCharacter(character) && this.breakType == byte(0) {
@@ -48,7 +43,7 @@ func (this *creditCardRedact) match(input []byte) {
 				continue
 			}
 		}
-		if this.numericLength >= 12 && this.numericLength <= 19 && luhn(this.value) && !isNumeric(input[i+1]) {
+		if this.numericLength >= 12 && luhn(this.value) && !isNumeric(input[i+1]) {
 			this.appendMatch(this.lastDigitIndex, len(input[this.lastDigitIndex:(this.lastDigitIndex + this.length)]))
 			this.reset(i)
 		}

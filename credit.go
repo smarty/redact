@@ -12,7 +12,6 @@ func (this *creditCardRedact) match(input []byte) {
 		if !isInterestingCharacter(character) && !isNumeric(character) {
 			this.reset(i)
 			continue
-			//else if is very redundant
 		}
 		if isNumeric(character) {
 			this.length++
@@ -51,16 +50,14 @@ func (this *creditCardRedact) match(input []byte) {
 	this.reset(0)
 }
 func isInterestingCharacter(character byte) bool {
-	interesting := false
 	switch character {
 	case ' ':
-		interesting = true
+		return true
 	case '-':
-		interesting = true
+		return true
 	default:
-		return interesting
+		return false
 	}
-	return interesting
 }
 
 func (this *creditCardRedact) reset(i int) {

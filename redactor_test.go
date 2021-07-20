@@ -214,8 +214,8 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"Feb 01, 2012",
-		"************",
+		" Feb 01, 2012",
+		" ************",
 	)
 	assertRedaction(t, redaction,
 		"APRIL 3, 2019",

@@ -11,6 +11,12 @@ func (this *FullDOB) findMatch(input []byte) {
 		if i < len(this.redact.used)-1 && this.redact.used[i] {
 			continue
 		}
+
+		_, found := validFirst[input[this.redact.start]]
+		if !found {
+			this.resetCount(i)
+			continue
+		}
 		if i < len(input)-1 && i > 0 && !this.validMonthFound && input[i] == ' ' {
 			if !this.isMonth(input[this.redact.start], input[i-1], this.redact.length) {
 				this.resetCount(i)
@@ -42,11 +48,15 @@ func (this *FullDOB) findMatch(input []byte) {
 				this.resetCount(i)
 				continue
 			}
+			continue
 		}
-		this.resetCount(i)
+		this.redact.length++
 	}
-	if this.validMonthFound && this.validDayFound && this.redact.validateYear(input[this.redact.length-4:this.redact.length]) {
-		this.redact.appendMatch(this.redact.start, this.redact.length)
+	if this.validMonthFound && this.validDayFound{
+		this.redact.length++
+		if this.redact.validateYear(input[this.redact.length - 4:this.redact.length]){
+			this.redact.appendMatch(this.redact.start, this.redact.length)
+		}
 	}
 }
 
@@ -66,6 +76,7 @@ func (this *FullDOB) isMonth(first, last byte, length int) bool {
 	if !found {
 		return false
 	}
+	//it is stopping here
 	for _, number := range candidate {
 		if number == length {
 			return true
@@ -92,5 +103,16 @@ var (
 		'O': {'t': []int{3}, 'r': []int{7}, 'T': []int{3}, 'R': []int{7}},
 		'N': {'v': []int{3}, 'r': []int{9}, 'V': []int{3}, 'R': []int{9}},
 		'D': {'r': []int{8}, 'c': []int{3}, 'R': []int{8}, 'C': []int{3}},
+	}
+
+	validFirst = map[byte][]int{
+		'J': {0},
+		'F': {0},
+		'M': {0},
+		'A': {0},
+		'S': {0},
+		'O': {0},
+		'N': {0},
+		'D': {0},
 	}
 )

@@ -7,7 +7,7 @@ type FullDOB struct {
 }
 
 func (this *FullDOB) findMatch(input []byte) {
-	for i := 0; i < len(input); i++ {
+	for i := 0; i < len(input) - 1; i++ {
 		if i < len(this.redact.used)-1 && this.redact.used[i] {
 			continue
 		}
@@ -42,9 +42,8 @@ func (this *FullDOB) findMatch(input []byte) {
 				this.resetCount(i)
 				continue
 			}
-			continue
 		}
-		this.redact.length++
+		this.resetCount(i)
 	}
 	if this.validMonthFound && this.validDayFound && this.redact.validateYear(input[this.redact.length-4:this.redact.length]) {
 		this.redact.appendMatch(this.redact.start, this.redact.length)

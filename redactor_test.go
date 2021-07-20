@@ -1,21 +1,7 @@
 package redact
 
 import "testing"
-func BenchmarkThing(b *testing.B) {
-	redaction := New()
-	b.ReportAllocs()
-	b.ResetTimer()
-	input := []byte("+8014890464 Hello 6749-3-2345 (801)4890464there, my name is stuff. 1200 East 1200 North Mapleton " +
-		"1(385)6668330. 18014890464 371449635398431numMayers 12, 1970ber is 647-48-6867. I " +
-		"9/1/2020 to fill these wo04/16/1999rds in with other 371 449 635 398 1945/05/01 " +
-		"431impoletsgitit@yahoo.com. 4111-111-111-111-111 pasting 02/14/1900the " +
-		"647-21-12398 best of6011111111111117 the" +
-		"valid, and Jan 32, 1990someMarch 12, 2020 are not. 647489009 This is a vDecember 111, 2000ey fun task to do. " +
-		"647 40 4444 1+(801)4890464 647-48-9098")
-	for n := 0; n < b.N; n++ {
-		_ = redaction.All(input)
-	}
-}
+
 func assertRedaction(t *testing.T, redaction *Redactor, input, expected string) {
 	inputByte := []byte(input)
 	actual := redaction.RedactAll(inputByte)
@@ -144,6 +130,10 @@ func TestRedactEmail_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"test@test.com",
+		"****@test.com",
+	)
+	assertRedaction(t, redaction,
 		"Blah test.test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
 		"Blah *********@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
 	)
@@ -224,6 +214,10 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"Feb 01, 2012",
+		"************",
+	)
+	assertRedaction(t, redaction,
 		"APRIL 3, 2019",
 		"*************",
 	)
@@ -243,7 +237,6 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 		"1982/11/8",
 		"*********",
 	)
-
 	assertRedaction(t, redaction,
 		"Jan 1, 2021 ",
 		"*********** ",

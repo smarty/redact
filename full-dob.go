@@ -29,7 +29,7 @@ func (this *FullDOB) findMatch(input []byte) {
 				this.redact.numericLength = 0
 				continue
 			case this.redact.numericLength == 2 && !isNumeric(input[i+1]):
-				if !this.validateDay(input[i-1 : i]) {
+				if !this.validateDay(input[i-2 : i]) {
 					this.resetCount(i)
 					continue
 				}

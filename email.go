@@ -5,11 +5,12 @@ func (this *emailRedaction) clear() {
 	this.length = 0
 }
 func (this *emailRedaction) match(input []byte) {
-	for i := 0; i < len(input); i++ {
+	inputLength := len(input) - 1
+	for i := 0; i < inputLength; i++ {
 		if i < len(this.used) && this.used[i] {
 			continue
 		}
-		if i < len(input)-1 {
+		if i < inputLength {
 			this.checkMatch(input[i], i)
 		}
 		if this.length > MaxEmailLength {
@@ -25,6 +26,9 @@ func (this *emailRedaction) resetCount(i int) {
 func (this *emailRedaction) checkMatch(input byte, i int) {
 	switch input {
 	case '@':
+		if this.start == 0 {
+			this.length++
+		}
 		this.appendMatch(this.start, this.length-1)
 		this.resetCount(i)
 	case ' ':

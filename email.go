@@ -1,47 +1,34 @@
 package redact
 
-type emailRedaction struct {
-	*matched
-	start  int
-	length int
-}
-
-func (this *emailRedaction) match(input []byte) {
-	var maxEmailLength = 254
-	if len(input) <= 0 {
-		return
-	}
-	for i := 0; i < len(input); i++ {
-		character := input[i]
-		if i > len(this.used)-1 {
-			return
-		}
-		if this.used[i] {
-			continue
-		}
-		if !emailBreakNotFound(character) {
-			this.start = i + 1
-			this.length = 0
-			continue
-		} else {
-			if character == '@' {
-				this.appendMatch(this.start, this.length)
-				this.start = i + 1
-				this.length = 0
-			}
-			this.length++
-		}
-		if this.length > maxEmailLength {
-			this.length = 0
-		}
-	}
-}
-
 func (this *emailRedaction) clear() {
 	this.start = 0
 	this.length = 0
 }
+func (this *emailRedaction) match(input []byte) {
+	for i := 0; i < len(input); i++ {
+		if i < len(this.used) && this.used[i] {
+			continue
+		}
+		if i < len(input)-1 {
+			this.checkMatch(input[i], i)
+		}
+		if this.length > MaxEmailLength {
+			this.resetCount(i)
+		}
+	}
+}
 
-func emailBreakNotFound(character byte) bool {
-	return character != '.' && character != ' '
+func (this *emailRedaction) resetCount(i int) {
+	this.start = i + 1
+	this.length = 0
+}
+func (this *emailRedaction) checkMatch(input byte, i int) {
+	switch input {
+	case '@':
+		this.appendMatch(this.start, this.length-1)
+		this.resetCount(i)
+	case ' ':
+		this.resetCount(i)
+	}
+	this.length++
 }

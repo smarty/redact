@@ -1,209 +1,83 @@
 package redact
 
-type creditCardRedaction struct {
-	*matched
-	lastDigitIndex int
-	length         int
-	totalNumbers   int
-	isOdd          bool
-	isCandidate    bool
-	isLetter       bool
-	totalSum       int
-	numBreaks      int
-	groupLength    int
-	numGroups      int
-	breakType      byte
-}
-
 func (this *creditCardRedaction) clear() {
-	this.resetMatchValues()
-	this.lastDigitIndex = 0
-	this.groupLength = 0
-}
-
-func (this *creditCardRedaction) match(input []byte) {
-	if len(input) <= 0 {
-		return
-	}
-	for i := len(input) - 1; i > 0; i-- {
-		character := input[i]
-		if !isNumeric(input[i]) {
-			if this.validCardCheck() && isValidNetwork(input[i+1]) {
-				if this.numBreaks == 0 || this.numBreaks > 1 {
-					this.appendMatch(this.lastDigitIndex-this.length+1, this.length)
-					this.isLetter = false
-				}
-				this.lastDigitIndex = i - 1
-				temp := this.isCandidate
-				this.resetMatchValues()
-				this.isCandidate = temp
-				continue
-			}
-			if this.groupLength > 6 || this.groupLength < 4 {
-				this.groupLength = 0
-			} else {
-				this.numGroups++
-				this.groupLength = 0
-			}
-			if creditCardBreakNotFound(character) && i != len(input)-1 && !isNumeric(input[i-1]) {
-				this.lastDigitIndex = i - 1
-				this.length = 0
-				this.totalSum = 0
-				this.totalNumbers = 0
-				this.isCandidate = false
-				this.breakType = 'x'
-				this.numBreaks = 0
-				this.numGroups = 0
-				continue
-			}
-			if this.isCandidate || isLetter(character) {
-				if this.breakType == character && !creditCardBreakNotFound(character) {
-					if i != len(input)-1 && isNumeric(input[i+1]) {
-						this.numBreaks++
-					} else {
-						this.resetMatchValues()
-						this.lastDigitIndex = i - 1
-						this.length = 0
-						this.totalSum = 0
-						this.totalNumbers = 0
-						this.isCandidate = false
-						this.breakType = 'x'
-						this.numBreaks = 0
-						this.numGroups = 0
-					}
-				}
-				if this.breakType == 'x' && !creditCardBreakNotFound(character) {
-					this.breakType = character
-					this.numBreaks++
-				}
-				if character != this.breakType {
-					if i < len(input)-1 && isNumeric(input[i+1]) {
-						temp := this.numBreaks
-						this.resetMatchValues()
-						this.numBreaks = temp
-						this.numBreaks++
-						continue
-					}
-					this.lastDigitIndex = i - 1
-					this.length = 0
-					this.totalSum = 0
-					this.totalNumbers = 0
-					this.isCandidate = false
-					this.breakType = 'x'
-					this.numBreaks = 0
-					this.numGroups = 0
-					continue
-				}
-			}
-			if i < len(input)-1 && !creditCardBreakNotFound(input[i+1]) {
-				continue
-			}
-			this.length++
-		} else {
-			this.isOdd = !this.isOdd
-			this.totalNumbers++
-			this.groupLength++
-			number := int(character - '0')
-			if !this.isOdd {
-				number += number
-				if number > 9 {
-					number -= 9
-				}
-			}
-			this.totalSum += number
-
-			if this.isCandidate {
-				this.length++
-			} else {
-				this.isCandidate = true
-				this.breakType = 'x'
-				this.lastDigitIndex = i
-				this.totalNumbers = 1
-				if this.length == 0 {
-					this.length++
-				}
-			}
-		}
-	}
-	if len(input) > 0 && isNumeric(input[0]) {
-		this.isOdd = !this.isOdd
-		this.totalNumbers++
-		number := int(input[0] - '0')
-		if !this.isOdd {
-			number += number
-			if number > 9 {
-				number -= 9
-			}
-		}
-		if this.numBreaks > 0 {
-			this.numGroups++
-		}
-		this.totalSum += number
-		this.length++
-	}
-	if this.validCardCheck() {
-		if this.numBreaks > 0 && this.numGroups == 0 {
-			this.resetMatchValues()
-			this.isLetter = false
-		}
-
-		if this.length > 0 && (this.numBreaks == 0 || this.numBreaks > 1) {
-			start := this.lastDigitIndex + 1 - this.length
-			index := start
-			if start < 0 {
-				index = start * -1
-				start = 0
-			}
-			if isValidNetwork(input[index]) {
-				this.appendMatch(start, this.length)
-				this.isLetter = false
-			}
-			this.resetMatchValues()
-			this.isLetter = false
-		}
-	}
-}
-
-func (this *creditCardRedaction) validCardCheck() bool {
-	if this.totalNumbers <= 12 {
-		return false
-	}
-	if this.totalNumbers >= 20 {
-		return false
-	}
-	if this.totalSum%10 != 0 {
-		return false
-	}
-	if this.numGroups < 2 && this.numGroups != 0 {
-		return false
-	}
-	return true
-}
-
-func (this *creditCardRedaction) resetMatchValues() {
-	this.breakType = 'x'
+	this.start = 0
 	this.length = 0
 	this.totalSum = 0
-	this.isOdd = false
-	this.totalNumbers = 0
-	this.numBreaks = 0
-	this.numGroups = 0
-	this.isCandidate = false
+	this.isSecond = false
+	this.breakLength = 0
+}
+func (this *creditCardRedaction) match(input []byte) {
+	inputLength := len(input) - 1
+	for i := inputLength; i > 0; i-- {
+		if i < len(this.used)-1 && this.used[i] {
+			continue
+		}
+		if isNumeric(input[i]) {
+			this.length++
+			this.start = i
+			this.luhnCheck(input[i])
+			continue
+		}
+		if this.validateCard(input[this.start]) {
+			this.appendMatch(this.start, this.length)
+			this.resetCount(i, inputLength)
+			continue
+		}
+		if this.length > 0 && this.validateBreaks(input[i]) && !this.validateBreaks(input[i+1]) {
+			this.breakLength++
+			this.length++
+			continue
+		}
+		this.resetCount(i, inputLength)
+	}
+	if this.length != 0 && isNumeric(input[0]) {
+		this.length++
+		this.start = 0
+		this.luhnCheck(input[this.start])
+	}
+	if this.validateCard(input[this.start]) {
+		this.appendMatch(this.start, this.length)
+	}
 }
 
-func creditCardBreakNotFound(character byte) bool {
-	return character != '-' && character != ' '
-}
-func isValidNetwork(character byte) bool {
-	return character >= '3' && character <= '6'
+func (this *creditCardRedaction) resetCount(i, length int) {
+	if this.length < length {
+		this.start = i - 1
+	}
+	this.length = 0
+	this.totalSum = 0
+	this.isSecond = false
+	this.breakLength = 0
 }
 
-func isLetter(character byte) bool {
-	if character >= 65 || character <= 90 {
-		return true
+func (this *creditCardRedaction) luhnCheck(input byte) {
+	var value uint64
+	value = uint64(input - '0')
+
+	if this.isSecond {
+		value *= 2
 	}
-	if character >= 97 || character <= 122 {
-		return true
+	this.totalSum += value / 10
+	this.totalSum += value % 10
+	this.isSecond = !this.isSecond
+}
+func (this *creditCardRedaction) validateBreaks(input byte) bool {
+	return input == ' ' || input == '-'
+}
+func (this *creditCardRedaction) validateCard(input byte) bool {
+	if this.breakLength != 0 && (this.breakLength < MinCreditBreakLength || this.breakLength > MaxCreditBreakLength) {
+		return false
 	}
-	return false
+	numericLength := this.length - this.breakLength
+	if numericLength < MinCreditLength_NoBreaks || numericLength > MaxCreditLength_NoBreaks {
+		return false
+	}
+	if !validateNetwork(input) {
+		return false
+	}
+	return this.totalSum%10 == 0
+}
+func validateNetwork(input byte) bool {
+	return input >= '3' && input <= '6'
 }

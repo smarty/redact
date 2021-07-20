@@ -1,38 +1,19 @@
 package redact
 
-type Redactor struct {
-	*matched
-	phone   *phoneRedaction
-	ssn     *ssnRedaction
-	credit  *creditCardRedaction
-	dob     *dobRedaction
-	email   *emailRedaction
-	monitor monitor
-}
-
-func (this *Redactor) All(input []byte) []byte {
-	this.clear()
-	this.credit.match(input)
-	this.email.match(input)
-	this.ssn.match(input)
-	this.phone.match(input)
-	this.dob.match(input)
+func (this *Redactor) RedactAll(input []byte) []byte {
+	this.clear(this.phone, this.email, this.dob, this.credit, this.ssn)
+	if len(input) <= 0 {
+		return input
+	}
+	this.match(input, this.phone, this.email, this.ssn, this.dob, this.credit)
 	result := this.redactMatches(input)
 	return result
-}
-func (this *Redactor) clear() {
-	this.matched.clear()
-	this.credit.clear()
-	this.email.clear()
-	this.ssn.clear()
-	this.phone.clear()
-	this.dob.clear()
 }
 
 func (this *Redactor) redactMatches(input []byte) []byte {
 	count := len(this.matches)
 	if count == 0 {
-		return input // no changes to redact
+		return input
 	}
 	this.monitor.Redacted(count)
 
@@ -58,29 +39,14 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 	return output
 }
 
-func isNumeric(value byte) bool {
-	return value >= '0' && value <= '9'
-}
-
-type match struct {
-	InputIndex int
-	Length     int
-}
-type matched struct {
-	used    []bool
-	matches []match
-}
-
-func (this *matched) appendMatch(start, length int) {
-	for i := start; i <= start+length; i++ {
-		this.used[i] = true
+func (this *Redactor) match(input []byte, matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		method.match(input)
 	}
-	this.matches = append(this.matches, match{InputIndex: start, Length: length})
 }
-
-func (this *matched) clear() {
-	this.matches = this.matches[0:0]
-	for i := range this.used {
-		this.used[i] = false
+func (this *Redactor) clear(matchMethod ...Redaction) {
+	for _, method := range matchMethod {
+		method.clear()
 	}
+	this.matched.clear()
 }

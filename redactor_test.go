@@ -74,6 +74,10 @@ func TestRedactCreditCard_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"6011 0009-9013-9424 taco.",
+		"6011 0009-9013-9424 taco.",
+	)
+	assertRedaction(t, redaction,
 		"6011 0009 9013  9424 taco.",
 		"6011 0009 9013  9424 taco.",
 	)
@@ -142,8 +146,8 @@ func TestRedactEmail_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
-		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
-		"Blah test.gmail.com, our employee's email is test.gmail. and we have one more which may or not be an email test.test taco",
+		"Blah test.gmail.com",
+		"Blah test.gmail.com",
 	)
 }
 

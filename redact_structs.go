@@ -31,6 +31,7 @@ type creditCardRedaction struct {
 	isSecond    bool
 	totalSum    uint64
 	breakLength int
+	breakType   byte
 }
 type dobRedaction struct {
 	*matched

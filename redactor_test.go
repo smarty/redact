@@ -30,6 +30,7 @@ func BenchmarkThing(b *testing.B) {
 		_ = redaction.RedactAll(input)
 	}
 }
+
 func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
@@ -218,6 +219,10 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"stuff February 1, 2020 ",
+		"stuff **************** ",
+	)
+	assertRedaction(t, redaction,
 		"Feb 01, 2012",
 		"************",
 	)
@@ -225,10 +230,7 @@ func TestRedactDOB_Valid_Redaction(t *testing.T) {
 		" APRIL 3, 2019",
 		" *************",
 	)
-	assertRedaction(t, redaction,
-		"stuff February 1, 2020 ",
-		"stuff **************** ",
-	)
+
 	assertRedaction(t, redaction,
 		"Blah 12-01-1998 and 12/01/1998 ",
 		"Blah ********** and ********** ",

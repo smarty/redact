@@ -5,7 +5,7 @@ func (this *creditCardRedaction) clear() {
 	this.length = 0
 	this.totalSum = 0
 	this.isSecond = false
-	this.breakLength = 0
+	this.numBreaks = 0
 }
 func (this *creditCardRedaction) match(input []byte) {
 	inputLength := len(input) - 1
@@ -28,7 +28,7 @@ func (this *creditCardRedaction) match(input []byte) {
 			if this.breakType == 0 {
 				this.breakType = input[i]
 			}
-			this.breakLength++
+			this.numBreaks++
 			this.length++
 			continue
 		}
@@ -51,7 +51,7 @@ func (this *creditCardRedaction) resetCount(i, length int) {
 	this.length = 0
 	this.totalSum = 0
 	this.isSecond = false
-	this.breakLength = 0
+	this.numBreaks = 0
 	this.breakType = 0
 }
 
@@ -70,10 +70,10 @@ func (this *creditCardRedaction) validateBreaks(input byte) bool {
 	return (input == ' ' || input == '-') && (this.breakType == input || this.breakType == 0)
 }
 func (this *creditCardRedaction) validateCard(input byte) bool {
-	if this.breakLength != 0 && (this.breakLength < MinCreditBreakLength || this.breakLength > MaxCreditBreakLength) {
+	if this.numBreaks != 0 && (this.numBreaks < MinCreditBreakLength || this.numBreaks > MaxCreditBreakLength) {
 		return false
 	}
-	numericLength := this.length - this.breakLength
+	numericLength := this.length - this.numBreaks
 	if numericLength < MinCreditLength_NoBreaks || numericLength > MaxCreditLength_NoBreaks {
 		return false
 	}

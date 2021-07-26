@@ -1,11 +1,11 @@
 package redact
 
-type AllNumericDOB struct {
+type allNumericDOB struct {
 	redact            *dobRedaction
 	validNumericMonth bool
 }
 
-func (this *AllNumericDOB) findMatch(input []byte) {
+func (this *allNumericDOB) findMatch(input []byte) {
 	for i := 0; i < len(input); i++ {
 		if i < len(this.redact.used)-1 && this.redact.used[i] {
 			continue
@@ -35,13 +35,13 @@ func (this *AllNumericDOB) findMatch(input []byte) {
 	}
 }
 
-func (this *AllNumericDOB) validateDOB(input []byte) bool {
+func (this *allNumericDOB) validateDOB(input []byte) bool {
 	this.redact.numericLength = 0
 	switch len(input) {
 	case 0:
 		return true
 	case 4:
-		return this.redact.validateYear(input)
+		return validateYear(input)
 	case 2:
 		return this.validateDate(input)
 	case 1:
@@ -51,7 +51,7 @@ func (this *AllNumericDOB) validateDOB(input []byte) bool {
 	}
 	return false
 }
-func (this *AllNumericDOB) validateDate(input []byte) bool {
+func (this *allNumericDOB) validateDate(input []byte) bool {
 	switch {
 	case input[0] == '0' && input[1] <= '9' && input[1] > 0:
 		this.validNumericMonth = true
@@ -66,7 +66,7 @@ func (this *AllNumericDOB) validateDate(input []byte) bool {
 	}
 }
 
-func (this *AllNumericDOB) resetCount(i int) {
+func (this *allNumericDOB) resetCount(i int) {
 	this.redact.start = i + 1
 	this.redact.length = 0
 	this.redact.breakLength = 0
@@ -74,7 +74,7 @@ func (this *AllNumericDOB) resetCount(i int) {
 	this.validNumericMonth = false
 }
 
-func (this *AllNumericDOB) validateBreaks(input byte, i int) {
+func (this *allNumericDOB) validateBreaks(input byte, i int) {
 	switch {
 	case input == '/':
 		this.redact.length++

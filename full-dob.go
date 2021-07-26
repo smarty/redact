@@ -1,12 +1,12 @@
 package redact
 
-type FullDOB struct {
+type fullDOB struct {
 	redact          *dobRedaction
 	validMonthFound bool
 	validDayFound   bool
 }
 
-func (this *FullDOB) findMatch(input []byte) {
+func (this *fullDOB) findMatch(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		if i < len(this.redact.used)-1 && this.redact.used[i] {
 			continue
@@ -15,13 +15,17 @@ func (this *FullDOB) findMatch(input []byte) {
 			this.resetCount(i)
 			continue
 		}
-		if i < len(input)-1 && i > 0 && !this.validMonthFound && input[i] == ' ' {
-			if !this.isMonth(input[this.redact.start], input[i-1], this.redact.length) {
+		if input[i] == ' ' {
+			if i < len(input)-1 && !isNumeric(input[i+1]) && input[i] != ',' {
 				this.resetCount(i)
 				continue
 			}
-			this.redact.length++
+			if i > 0 && !this.validMonthFound && !this.isMonth(input[this.redact.start], input[i-1], this.redact.length) {
+				this.resetCount(i)
+				continue
+			}
 			this.validMonthFound = true
+			this.redact.length++
 			continue
 		}
 		if i < len(input)-1 && this.validMonthFound && isNumeric(input[i]) {
@@ -41,32 +45,36 @@ func (this *FullDOB) findMatch(input []byte) {
 				this.redact.numericLength = 0
 				continue
 			case this.redact.numericLength == 4 && this.validDayFound:
-				this.redact.validateYear(input[i-4 : i])
-				this.redact.appendMatch(this.redact.start, this.redact.length)
+				if validateYear(input[i-3 : i+1]) {
+					this.redact.appendMatch(this.redact.start, this.redact.length)
+				}
 				this.resetCount(i)
 				continue
 			}
 			continue
 		}
 		this.redact.length++
+		if this.redact.length > 18 {
+			this.resetCount(i)
+		}
 	}
 	if this.validMonthFound && this.validDayFound {
 		this.redact.length++
 		validPosition := this.redact.length + this.redact.start
-		if this.redact.validateYear(input[validPosition-4 : validPosition]) {
+		if validateYear(input[validPosition-4 : validPosition]) {
 			this.redact.appendMatch(this.redact.start, this.redact.length)
 		}
 	}
 }
 
-func (this *FullDOB) validateDay(input []byte) bool {
+func (this *fullDOB) validateDay(input []byte) bool {
 	if len(input) < 2 || (input[0] >= '3' && input[1] > '1') {
 		return false
 	}
 	return true
 }
 
-func (this *FullDOB) isMonth(first, last byte, length int) bool {
+func (this *fullDOB) isMonth(first, last byte, length int) bool {
 	candidates, found := months[first]
 	if !found {
 		return false
@@ -82,11 +90,11 @@ func (this *FullDOB) isMonth(first, last byte, length int) bool {
 	}
 	return false
 }
-func (this *FullDOB) isValidFirstLetter(first byte) bool {
+func (this *fullDOB) isValidFirstLetter(first byte) bool {
 	return first == 'J' || first == 'F' || first == 'M' || first == 'A' || first == 'S' || first == 'O' || first == 'N' || first == 'D'
 }
 
-func (this *FullDOB) resetCount(i int) {
+func (this *fullDOB) resetCount(i int) {
 	this.redact.start = i + 1
 	this.redact.length = 0
 	this.redact.breakLength = 0

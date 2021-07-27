@@ -30,9 +30,9 @@ func (this *allNumericDOB) findMatch(input []byte) {
 	if this.redact.length >= MinDOBLength_WithBreaks && this.redact.length <= 10 && this.redact.breakLength == MaxDOBBreakLength && this.validNumericMonth {
 		if this.validateDOB(input[this.redact.length-this.redact.numericLength : this.redact.length]) {
 			this.redact.appendMatch(this.redact.start, this.redact.length)
-			this.resetCount(0)
 		}
 	}
+	this.resetCount(0)
 }
 
 func (this *allNumericDOB) validateDOB(input []byte) bool {

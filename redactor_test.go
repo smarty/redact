@@ -35,16 +35,16 @@ func TestRedactCreditCard_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
+		"*********************** *******************. taco ",
+	)
+	assertRedaction(t, redaction,
 		"taco 6011-0009-9013-9424",
 		"taco *******************",
 	)
 	assertRedaction(t, redaction,
 		"6011-0009-9013-9424 ",
 		"******************* ",
-	)
-	assertRedaction(t, redaction,
-		"4111 1111 1111 1101 111 4111-1111-1111-1111. taco ",
-		"*********************** *******************. taco ",
 	)
 	assertRedaction(t, redaction,
 		" 4111111111111101111 ",
@@ -77,6 +77,10 @@ func TestRedactCreditCard_Invalid_NoRedaction(t *testing.T) {
 	assertRedaction(t, redaction,
 		"6011 0009-9013-9424 taco.",
 		"6011 0009-9013-9424 taco.",
+	)
+	assertRedaction(t, redaction,
+		"601100 099 013 9424 taco.",
+		"601100 099 013 9424 taco.",
 	)
 	assertRedaction(t, redaction,
 		"6011 0009 9013  9424 taco.",

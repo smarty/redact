@@ -63,6 +63,7 @@ func (this *fullDOB) findMatch(input []byte) {
 		validPosition := this.redact.length + this.redact.start
 		if validateYear(input[validPosition-4 : validPosition]) {
 			this.redact.appendMatch(this.redact.start, this.redact.length)
+			this.resetCount(0)
 		}
 	}
 }

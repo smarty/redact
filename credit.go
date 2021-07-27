@@ -14,6 +14,7 @@ func (this *creditCardRedaction) match(input []byte) {
 			continue
 		}
 		if isNumeric(input[i]) {
+			this.numericLength++
 			this.length++
 			this.start = i
 			this.luhnCheck(input[i])
@@ -28,6 +29,12 @@ func (this *creditCardRedaction) match(input []byte) {
 			if this.breakType == 0 {
 				this.breakType = input[i]
 			}
+			if !validateBreakPositions(this.previousNumericLength, this.numericLength) && isNumeric(input[i+1]) {
+				this.resetCount(i, inputLength)
+				continue
+			}
+			this.previousNumericLength = this.numericLength
+			this.numericLength = 0
 			this.numBreaks++
 			this.length++
 			continue
@@ -41,6 +48,7 @@ func (this *creditCardRedaction) match(input []byte) {
 	}
 	if this.validateCard(input[this.start]) {
 		this.appendMatch(this.start, this.length)
+		this.resetCount(0, inputLength)
 	}
 }
 
@@ -53,6 +61,8 @@ func (this *creditCardRedaction) resetCount(i, length int) {
 	this.isSecond = false
 	this.numBreaks = 0
 	this.breakType = 0
+	this.numericLength = 0
+	this.previousNumericLength = 0
 }
 
 func (this *creditCardRedaction) luhnCheck(input byte) {
@@ -85,3 +95,37 @@ func (this *creditCardRedaction) validateCard(input byte) bool {
 func validateNetwork(input byte) bool {
 	return input >= '3' && input <= '6'
 }
+
+func validateBreakPositions(prev, curr int) bool {
+	switch prev {
+	case 0:
+		return true
+	case 4:
+		if curr == 4 {
+			return true
+		}
+	case 3:
+		if curr == 4 {
+			return true
+		}
+	case 5:
+		if curr == 6 || curr == 4 {
+			return true
+		}
+	case 6:
+		if curr == 4 {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
+}
+
+// Valid credit card lengths are:
+/*
+#### #### ##### (4-4-5)
+#### ###### ##### (4-6-5)
+#### #### #### #### (4-4-4-4)
+#### #### #### #### ### (4-4-4-4-3)
+*/

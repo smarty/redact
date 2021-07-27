@@ -27,6 +27,7 @@ func (this *ssnRedaction) match(input []byte) {
 			this.validateBreaks(input[i], i)
 		}
 	}
+	this.resetCount(0)
 }
 
 func (this *ssnRedaction) resetCount(i int) {

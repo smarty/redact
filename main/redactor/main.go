@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"strings"
 
@@ -14,8 +15,14 @@ import (
 func main() {
 	redactor := redact.New()
 
-	buffer := bufio.NewReaderSize(os.Stdin, 1024*1024*16)
+	//buffer := bufio.NewReaderSize(os.Stdin, 1024*1024*16)
+	file, err := os.Open("/Users/savannah/SmartyStreets/production-data-redact/test-data_1.txt")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
 
+	buffer := bufio.NewReader(file)
 	for {
 		line, _, err := buffer.ReadLine()
 		if err == io.EOF {

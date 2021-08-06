@@ -160,6 +160,10 @@ func TestRedactPhone_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
 	assertRedaction(t, redaction,
+		"801-111-1111 +1(801)111-1111 taco",
+		"************ +************** taco",
+	)
+	assertRedaction(t, redaction,
 		"+1(801)111-1111 taco",
 		"+************** taco",
 	)
@@ -171,10 +175,7 @@ func TestRedactPhone_Valid_Redaction(t *testing.T) {
 		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
 		"Blah ************ and (801) 111-1111 +************** taco",
 	)
-	assertRedaction(t, redaction,
-		"801-111-1111 +1(801)111-1111 taco",
-		"************ +************** taco",
-	)
+
 }
 func TestRedactPhone_Invalid_NoRedaction(t *testing.T) {
 	t.Parallel()

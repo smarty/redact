@@ -9,6 +9,7 @@ type fullDOB struct {
 func (this *fullDOB) findMatch(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		if i < len(this.redact.used)-1 && this.redact.used[i] {
+			this.resetCount(i)
 			continue
 		}
 		if !this.isValidFirstLetter(input[this.redact.start]) {

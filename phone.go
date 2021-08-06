@@ -9,6 +9,7 @@ func (this *phoneRedaction) clear() {
 func (this *phoneRedaction) match(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		if i < len(this.used)-1 && this.used[i] {
+			this.resetCount(i)
 			continue
 		}
 		if isNumeric(input[i]) {
@@ -18,7 +19,7 @@ func (this *phoneRedaction) match(input []byte) {
 			case this.length < MaxPhoneLength_WithBreaks && this.numericLength != MinPhoneLength_WithNoBreaks:
 				continue
 			case this.length >= MinPhoneLength_WithNoBreaks && this.length <= MaxPhoneLength_WithBreaks && this.breakLength <= MaxPhoneBreakLength:
-				this.validateMatch(input[this.start : i])
+				this.validateMatch(input[this.start:i])
 			}
 			if i < len(input)-1 {
 				this.resetCount(i)
@@ -49,6 +50,10 @@ func (this *phoneRedaction) validateBreaks(input byte, i int) {
 		this.length++
 		this.breakLength++
 	case '+':
+		if this.start != i {
+			this.resetCount(i)
+			break
+		}
 		this.start = i + 1
 		this.length = 1
 	default:

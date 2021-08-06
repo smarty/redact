@@ -8,6 +8,7 @@ func (this *emailRedaction) match(input []byte) {
 	inputLength := len(input) - 1
 	for i := 0; i < inputLength; i++ {
 		if i < len(this.used) && this.used[i] {
+			this.resetCount(i)
 			continue
 		}
 		if i < inputLength {

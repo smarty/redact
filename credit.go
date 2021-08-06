@@ -11,6 +11,7 @@ func (this *creditCardRedaction) match(input []byte) {
 	inputLength := len(input) - 1
 	for i := inputLength; i > 0; i-- {
 		if i < len(this.used)-1 && this.used[i] {
+			this.resetCount(i, inputLength)
 			continue
 		}
 		if isNumeric(input[i]) {

@@ -8,6 +8,7 @@ func (this *ssnRedaction) clear() {
 func (this *ssnRedaction) match(input []byte) {
 	for i := 0; i < len(input)-1; i++ {
 		if i < len(this.used)-1 && this.used[i] {
+			this.resetCount(i)
 			continue
 		}
 		if isNumeric(input[i]) {

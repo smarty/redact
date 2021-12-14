@@ -27,6 +27,7 @@ func New(options ...option) *Redactor {
 		dob:     &dobRedaction{matched: matched},
 		email:   &emailRedaction{matched: matched},
 		monitor: config.Monitor,
+		maxLength: config.MaxLength,
 	}
 }
 
@@ -54,7 +55,7 @@ func (singleton) apply(options ...option) option {
 }
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
-		Options.MaxLength(2048),
+		Options.MaxLength(512),
 		Options.BufferSize(16),
 		Options.Monitor(nop{}),
 	}, options...)

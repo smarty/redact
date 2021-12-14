@@ -54,7 +54,7 @@ func (singleton) apply(options ...option) option {
 }
 func (singleton) defaults(options ...option) []option {
 	return append([]option{
-		Options.MaxLength(512),
+		Options.MaxLength(2048),
 		Options.BufferSize(16),
 		Options.Monitor(nop{}),
 	}, options...)

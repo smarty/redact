@@ -1,6 +1,6 @@
 # Contributing
 
-In general, the code posted to the [SmartyStreets github organization](https://github.com/smartystreets) is created to solve specific problems at SmartyStreets that are ancillary to our core products in the address verification industry and may or may not be useful to other organizations or developers. Our reason for posting said code isn't necessarily to solicit feedback or contributions from the community but more as a showcase of some of the approaches to solving problems we have adopted.
+In general, the code posted to the [SmartyStreets Github organization](https://github.com/smartystreets) is created to solve specific problems at SmartyStreets that are ancillary to our core products in the address verification industry and may or may not be useful to other organizations or developers. Our reason for posting said code isn't necessarily to solicit feedback or contributions from the community but more as a showcase of some of the approaches to solving problems we have adopted.
 
 Having stated that, we do consider issues raised by other githubbers as well as contributions submitted via pull requests. When submitting such a pull request, please follow these guidelines:
 

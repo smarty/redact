@@ -2,12 +2,12 @@ package redact
 
 type Redactor struct {
 	*matched
-	phone   *phoneRedaction
-	ssn     *ssnRedaction
-	credit  *creditCardRedaction
-	dob     *dobRedaction
-	email   *emailRedaction
-	monitor monitor
+	phone     *phoneRedaction
+	ssn       *ssnRedaction
+	credit    *creditCardRedaction
+	dob       *dobRedaction
+	email     *emailRedaction
+	monitor   monitor
 	maxLength int
 }
 

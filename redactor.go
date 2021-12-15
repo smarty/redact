@@ -6,8 +6,8 @@ func (this *Redactor) RedactAll(input []byte) []byte {
 	if length <= 0 {
 		return input
 	}
-	if length > this.maxLength{
-		input = input[0 : this.maxLength]
+	if length > this.maxLength {
+		input = input[0:this.maxLength]
 	}
 
 	this.match(input, this.phone, this.email, this.ssn, this.dob, this.credit)
@@ -21,7 +21,6 @@ func (this *Redactor) redactMatches(input []byte) []byte {
 		return input
 	}
 	this.monitor.Redacted(count)
-
 
 	buffer := input
 	bufferLength := len(buffer)

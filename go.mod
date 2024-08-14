@@ -1,3 +1,3 @@
-module github.com/smartystreets/redact
+module github.com/smarty/redact
 
-go 1.21
+go 1.22

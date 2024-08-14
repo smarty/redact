@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/smarty/redact"
+	"github.com/smarty/redact/v2"
 )
 
 func main() {

@@ -7,6 +7,7 @@ func (this *phoneRedaction) clear() {
 	this.numericLength = 0
 }
 func (this *phoneRedaction) match(input []byte) {
+	var previousBreak byte
 	for i := 0; i < len(input)-1; i++ {
 		if i < len(this.used)-1 && this.used[i] {
 			this.resetCount(i)
@@ -27,7 +28,8 @@ func (this *phoneRedaction) match(input []byte) {
 			continue
 		}
 		if i < len(input)-1 {
-			this.validateBreaks(input[i], i)
+			this.validateBreaks(input[i], previousBreak, i)
+			previousBreak = input[i]
 		}
 	}
 }
@@ -38,36 +40,44 @@ func (this *phoneRedaction) resetCount(i int) {
 	this.breakLength = 0
 	this.numericLength = 0
 }
-func (this *phoneRedaction) validateBreaks(input byte, i int) {
-	switch input {
-	case '-':
-		this.length++
-		this.breakLength++
-	case '(':
-		this.length++
-		this.breakLength++
-	case ')':
-		this.length++
-		this.breakLength++
-	case '+':
+func (this *phoneRedaction) validateBreaks(input, previousBreak byte, i int) {
+	if !validBreak(input) {
+		this.resetCount(i)
+		return
+	}
+	if input == ' ' && previousBreak != ')' {
+		this.resetCount(i)
+		return
+	}
+	if input == '+' {
 		if this.start != i {
 			this.resetCount(i)
-			break
 		}
 		this.start = i + 1
 		this.length = 1
-	default:
-		this.resetCount(i)
+		return
 	}
+
+	this.length++
+	this.breakLength++
 }
+func validBreak(input byte) bool {
+	return input == '-' || input == '(' || input == ')' || input == ' ' || input == '+'
+}
+
 func (this *phoneRedaction) validateMatch(testMatch []byte) {
 	switch {
 	case this.length == MinPhoneLength_WithBreaks && this.breakLength == MinPhoneBreakLength:
 		if testMatch[3] == '-' && testMatch[7] == '-' {
 			this.appendMatch(this.start, this.length)
 		}
-	case this.length == MaxPhoneLength_WithBreaks && this.breakLength == MaxPhoneBreakLength:
+
+	case this.length == MaxPhoneLength_WithBreaks-1 && this.breakLength == MaxPhoneBreakLength-1: // No space
 		if testMatch[1] == '(' && testMatch[5] == ')' && testMatch[9] == '-' {
+			this.appendMatch(this.start, this.length)
+		}
+	case this.length == MaxPhoneLength_WithBreaks && this.breakLength == MaxPhoneBreakLength: // With space
+		if testMatch[1] == '(' && testMatch[5] == ')' && testMatch[6] == ' ' && testMatch[10] == '-' {
 			this.appendMatch(this.start, this.length)
 		}
 	}

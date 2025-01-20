@@ -58,10 +58,10 @@ func isNumeric(value byte) bool {
 const (
 	MaxEmailLength = 254
 
-	MaxPhoneLength_WithBreaks   = 14
+	MaxPhoneLength_WithBreaks   = 15
 	MinPhoneLength_WithBreaks   = 12
 	MinPhoneLength_WithNoBreaks = 10
-	MaxPhoneBreakLength         = 3
+	MaxPhoneBreakLength         = 4
 	MinPhoneBreakLength         = 2
 
 	MaxSSNLength_WithBreaks = 11

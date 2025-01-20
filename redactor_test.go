@@ -128,6 +128,10 @@ func TestRedactEmail_Valid_Redaction(t *testing.T) {
 		"****@test.com",
 	)
 	assertRedaction(t, redaction,
+		"0000|test@test.com|1222",
+		"0000|****@test.com|1222",
+	)
+	assertRedaction(t, redaction,
 		"Blah test.test@gmail.com, our employee's email is test@gmail. and we have one more which may or not be an email test@test taco",
 		"Blah *********@gmail.com, our employee's email is ****@gmail. and we have one more which may or not be an email ****@test taco",
 	)
@@ -138,6 +142,10 @@ func TestRedactEmail_Invalid_NoRedaction(t *testing.T) {
 	assertRedaction(t, redaction,
 		"Blah test.gmail.com",
 		"Blah test.gmail.com",
+	)
+	assertRedaction(t, redaction,
+		"Blah test|@gmail.com",
+		"Blah test|@gmail.com",
 	)
 }
 

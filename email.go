@@ -34,6 +34,9 @@ func (this *emailRedaction) checkMatch(input byte, i int) {
 		this.resetCount(i)
 	case ' ':
 		this.resetCount(i)
+	case '|':
+		this.resetCount(i)
 	}
+
 	this.length++
 }

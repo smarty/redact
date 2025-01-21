@@ -152,6 +152,7 @@ func TestRedactEmail_Invalid_NoRedaction(t *testing.T) {
 func TestRedactPhone_Valid_Redaction(t *testing.T) {
 	t.Parallel()
 	redaction := New()
+
 	assertRedaction(t, redaction,
 		"801-111-1111 +1(801)111-1111 taco",
 		"************ +************** taco",
@@ -171,6 +172,10 @@ func TestRedactPhone_Valid_Redaction(t *testing.T) {
 	assertRedaction(t, redaction,
 		"Blah 801-111-1111 and (801) 111-1111 +1(801)111-1111 taco",
 		"Blah ************ and (801) 111-1111 +************** taco",
+	)
+	assertRedaction(t, redaction,
+		"1111|801-111-1111",
+		"1111|************",
 	)
 }
 func TestRedactPhone_Invalid_NoRedaction(t *testing.T) {
@@ -196,6 +201,10 @@ func TestRedactSSN_Valid_Redaction(t *testing.T) {
 	assertRedaction(t, redaction,
 		"Blah 123-12-1234.",
 		"Blah ***********.",
+	)
+	assertRedaction(t, redaction,
+		"Blah|123-12-1234",
+		"Blah|***********",
 	)
 	assertRedaction(t, redaction,
 		"123 12 1234 taco",

@@ -8,12 +8,12 @@ func (this *phoneRedaction) clear() {
 }
 func (this *phoneRedaction) match(input []byte) {
 	var previousBreak byte
-	for i := 0; i < len(input)-1; i++ {
+	for i, val := range input {
 		if i < len(this.used)-1 && this.used[i] {
 			this.resetCount(i)
 			continue
 		}
-		if isNumeric(input[i]) {
+		if isNumeric(val) {
 			this.numericLength++
 			this.length++
 			switch {
@@ -28,7 +28,7 @@ func (this *phoneRedaction) match(input []byte) {
 			continue
 		}
 		if i < len(input)-1 {
-			this.validateBreaks(input[i], previousBreak, i)
+			this.validateBreaks(val, previousBreak, i)
 			previousBreak = input[i]
 		}
 	}

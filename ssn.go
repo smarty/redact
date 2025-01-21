@@ -6,12 +6,12 @@ func (this *ssnRedaction) clear() {
 	this.breakLength = 0
 }
 func (this *ssnRedaction) match(input []byte) {
-	for i := 0; i < len(input)-1; i++ {
+	for i, val := range input {
 		if i < len(this.used)-1 && this.used[i] {
 			this.resetCount(i)
 			continue
 		}
-		if isNumeric(input[i]) {
+		if isNumeric(val) {
 			this.length++
 			switch {
 			case this.length < MaxSSNLength_WithBreaks && this.breakLength <= MaxSSNBreakLength:
@@ -25,7 +25,7 @@ func (this *ssnRedaction) match(input []byte) {
 			continue
 		}
 		if i < len(input)-1 {
-			this.validateBreaks(input[i], i)
+			this.validateBreaks(val, i)
 		}
 	}
 	this.resetCount(0)
